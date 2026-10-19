@@ -6,7 +6,7 @@ Evidence tags used below: **static** (file or spec), **observed** (seen during t
 
 ## 1. Product
 
-**Polish Clips** is a transcript-first polish pipeline. It is not a 1:1 Descript clone.
+**Polish Clips** is a transcript-first polish pipeline plus a local editor. It is not a 1:1 Descript clone.
 
 In scope, in order:
 
@@ -14,11 +14,13 @@ In scope, in order:
 2. Filler removal with nondestructive **ignore** (strikethrough) semantics.
 3. Retake removal / tighten.
 4. Studio Sound–class denoise and enhance.
-5. Captions (SRT / VTT).
+5. Caption cues (SRT / VTT) and a **local** caption style (font, color, position, karaoke). Style is not an OpenAPI field.
 6. Clip cutting from a transcript selection.
-7. Publish / export, secondary.
+7. Editor foundation: composition, tracks, layers, mixer, transcript-linked edits, preview. Specs in [docs/pseudocode/editor/](docs/pseudocode/editor/).
+8. Caption burn-in into frames, optional on export.
+9. Publish / export, secondary.
 
-Eye contact is a research note only. It does not block the MVP. Translate, dub, green screen, Overdub, Rooms, and collaboration are out of scope.
+Eye contact is a research note only. It does not block the MVP. Translate, dub, green screen, Overdub, Rooms, Brand Studio, and collaboration stay later.
 
 ## 2. What is already established
 
@@ -53,7 +55,7 @@ Base URL in the OpenAPI `servers` entry: `https://descriptapi.com/v1`. Human doc
 
 Auth is a Bearer token scoped to one Drive. Import spends **media minutes** and returns HTTP 402 when they run out. Agent edits spend **AI credits** and return HTTP 402 when those run out. Jobs are asynchronous: create, then poll `GET /v1/jobs/{job_id}` until `job_state` is `stopped`, then read `result.status`.
 
-The spec's own agent examples cover filler-word removal, Studio Sound, captions, and highlight clips as **natural-language prompts**, not as separate REST operations. Eye contact does not appear as an operation or schema field.
+The spec's own agent examples cover filler-word removal, Studio Sound, captions, and highlight clips as **natural-language prompts**, not as separate REST operations. Eye contact does not appear as an operation or schema field. Caption font, color, position, and burn-in are also absent: Polish Clips styles those locally.
 
 ## 3. Constraints that still apply
 
@@ -106,8 +108,11 @@ Behavioural specs with build options:
 - [docs/pseudocode/retake-removal.md](docs/pseudocode/retake-removal.md)
 - [docs/pseudocode/studio-sound.md](docs/pseudocode/studio-sound.md)
 - [docs/pseudocode/captions.md](docs/pseudocode/captions.md)
+- [docs/pseudocode/caption-style.md](docs/pseudocode/caption-style.md)
+- [docs/pseudocode/caption-burnin.md](docs/pseudocode/caption-burnin.md)
 - [docs/pseudocode/clip-cut.md](docs/pseudocode/clip-cut.md)
 - [docs/pseudocode/underlord-agent-job.md](docs/pseudocode/underlord-agent-job.md)
+- [docs/pseudocode/editor/](docs/pseudocode/editor/) — timeline, layers, mixer, edits, render, UI wires
 
 ### Phase 6 — build and verify (later PR)
 

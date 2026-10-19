@@ -6,15 +6,17 @@ Evidence: API column is **static**. Product behaviour that the spec does not nam
 
 ## Pipeline
 
-| Feature | MVP | Input | Output | Where it runs | API | Open stack | Observed cost |
+| Feature | When | Input | Output | Where it runs | API | Open stack | Observed cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Import + transcribe | yes | Local file or URL, language hint | Project or local media id; word timings | Server via API, or on-device ASR | `POST /jobs/import/project_media` then poll. Transcription is part of import (static). No word-JSON endpoint | ffmpeg decode + Whisper-class ASR with word timestamps | |
-| Filler removal | yes | Transcript words | Same words with `ignored=true` on fillers | Local model. API path is a prompt | `POST /jobs/agent` prompt. Official example text is "remove all filler words" (static). Ignore/strikethrough is not a field | Lexicon + context filter; set ignore, do not delete the word | |
-| Retake removal | yes | Transcript utterances | Earlier takes marked ignored | Local model, or one agent prompt | Prompt only. No retake schema | Near-duplicate utterance match; keep the last take | |
-| Studio Sound–class enhance | yes | Speech audio | Enhanced audio, original kept | Local denoiser, or agent prompt | Prompt "add studio sound". No intensity parameter (static) | RNNoise-class or DeepFilterNet-class; ffmpeg `afftdn` as a weak baseline | |
-| Captions | yes | Non-ignored words | SRT and VTT cues | Local grouper. API can also add captions inside a project | Agent prompt "add captions". `POST /export/transcript` `format: srt` returns a timed transcript file (static) | Cue builder in [pseudocode/captions.md](pseudocode/captions.md) | |
-| Clip cut | yes | Word or time selection | New clip of kept ranges inside the selection | Local ffmpeg trim/concat, or a coarse agent prompt | Prompt only ("create a 30-second highlight reel" is the spec example) | Selection → kept ranges → encode | |
-| Publish / export | secondary | Composition or local master | File, or share URL + download URL | API publish job, or local encode | `POST /jobs/publish`; `GET /projects/{id}` lists existing `publishes` | ffmpeg encode; no share page | |
+| Import + transcribe | required | Local file or URL, language hint | Project or local media id; word timings | Server via API, or on-device ASR | `POST /jobs/import/project_media` then poll. Transcription is part of import (static). No word-JSON endpoint | ffmpeg decode + Whisper-class ASR with word timestamps | |
+| Filler removal | required | Transcript words | Same words with `ignored=true` on fillers | Local model. API path is a prompt | `POST /jobs/agent` prompt. Official example text is "remove all filler words" (static). Ignore/strikethrough is not a field | Lexicon + context filter; set ignore, do not delete the word | |
+| Retake removal | required | Transcript utterances | Earlier takes marked ignored | Local model, or one agent prompt | Prompt only. No retake schema | Near-duplicate utterance match; keep the last take | |
+| Studio Sound–class enhance | required | Speech audio | Enhanced audio, original kept | Local denoiser, or agent prompt | Prompt "add studio sound". No intensity parameter (static) | RNNoise-class or DeepFilterNet-class; ffmpeg `afftdn` as a weak baseline | |
+| Captions (cues) | required | Non-ignored words | SRT, VTT, and `Cue[]` with word spans | Local grouper | Agent prompt "add captions". `POST /export/transcript` `format: srt` is a file, not a style (static) | [pseudocode/captions.md](pseudocode/captions.md) | |
+| Caption style | required | `CaptionStyle` | Preview and saved style | Local only | No caption-style schema (static). Underlord's look is uncontrolled | [pseudocode/caption-style.md](pseudocode/caption-style.md) | |
+| Caption burn-in | secondary | Video + `Cue[]` + style | Video file with text in the frames | Local render. Off unless asked | None. A publish job may burn Underlord's own captions; that style is not ours | [pseudocode/caption-burnin.md](pseudocode/caption-burnin.md) | |
+| Clip cut | required | Word or time selection | New clip of kept ranges inside the selection | Local ffmpeg trim/concat, or a coarse agent prompt | Prompt only ("create a 30-second highlight reel" is the spec example) | Selection → kept ranges → encode | |
+| Publish / export | secondary | Composition or local master | File, or share URL + download URL | API publish job, or local encode | `POST /jobs/publish`; `GET /projects/{id}` lists existing `publishes` | [pseudocode/editor/export-render.md](pseudocode/editor/export-render.md) | |
 
 ## Research note (non-blocking)
 
@@ -22,9 +24,29 @@ Evidence: API column is **static**. Product behaviour that the spec does not nam
 | --- | --- | --- | --- |
 | Eye contact | no | Descript markets an eye-contact correction. The OpenAPI has no operation, schema field, or example prompt for it (static). It might be prompt-only or UI-only (**inferred**, unknown) | Do not add a pipeline stage. A later token probe can try one explicit prompt and record `project_changed` plus `agent_response`. Failure or a vague reply leaves the feature unknown |
 
-## Explicitly out of scope
+## Editor foundation
 
-Translate / dub, green screen, Overdub and other voice clones, screen recording, Rooms, comments, Drive collaboration, Premiere/FCPXML interchange, Brand Studio, layout packs. `GET /search` and `POST /edit_in_descript/schema` exist (static) and are unused by this pipeline.
+The editor is specified under [pseudocode/editor/](pseudocode/editor/). It is the canvas the polish pipeline seeds. It is not a Descript clone. None of these rows have an OpenAPI operation (static).
+
+| Feature | When | Spec |
+| --- | --- | --- |
+| Project, one composition, video / audio / caption tracks | Required with the editor | [pseudocode/editor/overview.md](pseudocode/editor/overview.md), [timeline-model.md](pseudocode/editor/timeline-model.md) |
+| Transcript-linked ignore, ripple / roll / slip | Required with the editor | [pseudocode/editor/selection-and-edits.md](pseudocode/editor/selection-and-edits.md) |
+| Preview, transcript panel, timeline, inspector | Required with the editor | [pseudocode/editor/ui-surface.md](pseudocode/editor/ui-surface.md) |
+| Per-clip gain, mute, pan, fades, highpass / lowpass | Required with the editor | [pseudocode/editor/audio-mixer.md](pseudocode/editor/audio-mixer.md) |
+| Studio Sound as a clip effect node | Required with the editor; same engines as the pipeline stage | [pseudocode/studio-sound.md](pseudocode/studio-sound.md) |
+| Media transform, crop, opacity, caption layer | Required with the editor | [pseudocode/editor/layers.md](pseudocode/editor/layers.md) |
+| Offline render + optional burn-in | Required once export ships; burn-in stays optional per export | [pseudocode/editor/export-render.md](pseudocode/editor/export-render.md) |
+| Text overlays that reuse caption fonts | Later, types are in the layer spec | [pseudocode/editor/layers.md](pseudocode/editor/layers.md) |
+| Shapes, images, blend modes other than normal | Later | [pseudocode/editor/layers.md](pseudocode/editor/layers.md) |
+| Peak EQ bands, ducking | Later; stored and bypassed | [pseudocode/editor/audio-mixer.md](pseudocode/editor/audio-mixer.md) |
+| Nested sequences, scene export, NLE XML | Later | [pseudocode/editor/timeline-model.md](pseudocode/editor/timeline-model.md) |
+
+A polish-only build can ship before the full editor: cues, style preview, and optional burn-in do not wait on shapes or ducking. The editor specs are still in scope for the product, not parked as out of scope.
+
+## Later / out
+
+Translate / dub, green screen, Overdub and other voice clones, screen recording, Rooms, comments, Drive collaboration, Brand Studio, layout packs. `GET /search` and `POST /edit_in_descript/schema` exist (static) and are unused. Premiere / FCPXML interchange is later, beside NLE XML, and is not part of the MVP render.
 
 ## Fixtures
 

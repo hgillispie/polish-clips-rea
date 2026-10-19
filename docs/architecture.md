@@ -79,13 +79,16 @@ Two backends, one pipeline. The orchestrator is specified in [pseudocode/polish-
 
 | Backend | Owns | Limit |
 | --- | --- | --- |
-| Open stack | Word model, ignore flags, retake marks, local enhance, captions, clip cut | Quality of the chosen ASR and denoiser |
-| Descript API | Import + server transcription, Underlord prompt, publish URL | No word-level JSON and no ignore flag in the spec (static). Prompt wording is the only control |
+| Open stack | Word model, ignore flags, retake marks, local enhance, caption cues, caption style, optional burn-in, the editor timeline | Quality of the chosen ASR and denoiser |
+| Descript API | Import + server transcription, Underlord prompt, publish URL | No word-level JSON, no ignore flag, and no caption-style schema (static). Prompt wording is the only control |
 
 Eye contact sits beside the pipeline as a research note ([feature-inventory.md](feature-inventory.md)). It is not a stage.
+
+The local editor (tracks, layers, mixer, transcript-linked edits) is specified under [pseudocode/editor/](pseudocode/editor/). It is our canvas, not a clone of the Descript window.
 
 ## Out of scope for this architecture
 
 - Cloning the Descript web UI.
 - Recovering native add-ons from the desktop app.
 - Credential capture or auth bypass.
+- Translate / dub, Rooms, Overdub voice clone, green screen, Brand Studio.

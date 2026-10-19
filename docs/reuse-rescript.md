@@ -12,7 +12,25 @@
 - Export video, audio, captions (SRT/VTT/JSON and document formats), and a few NLE timelines.
 - Stack: Next.js, React, TypeScript, Tailwind, zustand, Electron.
 
-That overlaps Polish Clips on import, word timings, fillers, captions, and clip cutting. It does not advertise retake detection, a Studio Sound–class denoiser, or eye contact.
+That overlaps Polish Clips on import, word timings, fillers, captions, and clip cutting. It does not advertise retake detection, a Studio Sound–class denoiser, caption burn-in styling, a multi-track mixer, or eye contact.
+
+## Public modules that line up with our specs
+
+File names below are from the public tree of `wassgha/rescript` on `main`, listed 2026-10-19 (**static** filenames only). No file bodies are copied here. Commercial Polish Clips still cannot vendor them: the `LICENSE` on that tree is PolyForm Noncommercial 1.0.0.
+
+| Their path | Lines up with | Gap we still specify ourselves |
+| --- | --- | --- |
+| `components/Timeline.tsx` | [pseudocode/editor/timeline-model.md](pseudocode/editor/timeline-model.md), [ui-surface.md](pseudocode/editor/ui-surface.md) | Our tracks are video, audio, caption, overlay. Their timeline is a word bar plus cut ranges |
+| `components/TranscriptPanel.tsx`, `TranscriptTextLayer.tsx`, `TranscriptToolsMenu.tsx`, `TranscriptScrollIndicator.tsx` | Transcript panel wires in [ui-surface.md](pseudocode/editor/ui-surface.md) | Strikethrough ignore, not hard delete |
+| `hooks/useTranscriptSelection.ts`, `hooks/useTranscriptPlayheadFollow.ts`, `hooks/useCutRanges.ts` | [selection-and-edits.md](pseudocode/editor/selection-and-edits.md) | Ripple / roll / slip plus restore of ignored words |
+| `lib/transcript.ts`, `lib/transcriptText.ts`, `lib/parseTranscript.ts` | [pseudocode/transcript-model.md](pseudocode/transcript-model.md) | `ignored`, filler, and retake flags |
+| `lib/serializeTranscript.ts`, `lib/serializeTimeline.ts` | `polish.transcript.v1` and `polish.project.v1` | Our JSON shapes, not theirs. Tests next to those files show they serialize export formats |
+| `lib/ffmpeg.ts`, `electron/ffmpegRunner.ts`, `workers/transcription.worker.ts` | Decode, ASR worker, export encode in [export-render.md](pseudocode/editor/export-render.md) and [caption-burnin.md](pseudocode/caption-burnin.md) | ASS / drawtext burn-in and the layer composite |
+| `lib/fillers.ts`, `lib/silences.ts`, `lib/edits.ts` | Filler and cut behaviour | We ignore fillers; they cut them. Silence removal is not a Polish Clips MVP stage |
+| `components/Editor.tsx`, `MediaPreview.tsx`, `ExportDialog.tsx` | Preview and export regions | Inspector for `CaptionStyle` and the mixer |
+| `lib/exportArgs.ts` | Encode argument construction | Our presets in export-render |
+
+Study those names to see how a small editor is split. Implement from our pseudocode.
 
 ## License (read this before copying anything)
 
@@ -31,7 +49,7 @@ So:
 
 **Rebuild the editor concepts. Study rescript as a behavioural reference.**
 
-Use it to see what a small transcript editor feels like: word objects, cut ranges, a worker for ASR, ffmpeg for decode and export, a timeline next to the transcript. Implement those ideas from [pseudocode/transcript-model.md](pseudocode/transcript-model.md) and [pseudocode/polish-pipeline.md](pseudocode/polish-pipeline.md).
+Use it to see how a small transcript editor is split: timeline component, transcript panel, ffmpeg helpers, serializers. Implement the editor from [pseudocode/editor/overview.md](pseudocode/editor/overview.md) and the pipeline from [pseudocode/polish-pipeline.md](pseudocode/polish-pipeline.md).
 
 One behaviour we deliberately do differently: rescript's filler control **cuts** words. Polish Clips **ignores** them (strikethrough, reversible, skipped on playback and on export). A fork that only flipped a boolean would still be a derivative work of their code. Write the ignore model ourselves.
 
@@ -45,6 +63,8 @@ One behaviour we deliberately do differently: rescript's filler control **cuts**
 ## What Polish Clips still adds beside any editor
 
 - Retake detection that keeps the last take.
-- A swappable enhance stage (RNNoise-class locally, or a Descript agent prompt).
+- A swappable enhance stage (RNNoise-class locally, or a Descript agent prompt), including a clip effect node.
+- Local caption style and optional burn-in. Their export writes sidecar captions; it does not take a `CaptionStyle`.
+- Multi-track layers and a mixer (gain, fades, highpass / lowpass).
 - Optional Descript API backend for import, Underlord, and publish ([api-notes.md](api-notes.md)).
 - Eye contact left out until a probe says the API can do it.

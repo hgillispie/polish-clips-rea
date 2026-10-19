@@ -1,6 +1,6 @@
 # Polish Clips REA
 
-Clean-room notes for **Polish Clips**: a transcript-first pipeline that imports speech, transcribes it with word timings, ignores filler words, drops retakes, enhances audio, writes captions, and cuts a clip. This repository is the spec. It is not a Descript clone, and it does not contain Descript source.
+Clean-room notes for **Polish Clips**: a transcript-first pipeline (import, word timings, filler ignore, retakes, enhance, captions, clip cut) and a local editor (timeline, layers, mixer). Caption font, color, position, and optional burn-in are local. The Descript OpenAPI has no caption-style schema. This repository is the spec. It is not a Descript clone, and it does not contain Descript source.
 
 Operators continue this work from **Grok Bot** with **REA** (`rea-agents` 6.7.0) already connected. The Claude Code / Claude Desktop / Cowork path is retired.
 
@@ -22,13 +22,13 @@ Operators continue this work from **Grok Bot** with **REA** (`rea-agents` 6.7.0)
 | [docs/api-notes.md](docs/api-notes.md) | Request and response shapes from the staging OpenAPI (2026-10-19). |
 | [docs/reuse-rescript.md](docs/reuse-rescript.md) | Whether to study [wassgha/rescript](https://github.com/wassgha/rescript) or rebuild the editor. |
 | [docs/grokbot-rea.md](docs/grokbot-rea.md) | REA on Grok Bot. No Claude Desktop setup. |
-| [docs/pseudocode/](docs/pseudocode/) | Implementable pipeline specs for a later coding agent. |
+| [docs/pseudocode/](docs/pseudocode/) | Pipeline, caption style, burn-in, and the editor foundation. |
 
 ## Next steps
 
 1. Optional: create a Descript API token on a **test Drive** and probe one import plus one agent job. Record real `job_state` timing and credit counts in `docs/api-notes.md`. Do not commit the token.
 2. Record three fixture clips you own (clean speech, fillers plus retakes, noisy audio) outside git, under `captures/` or another ignored path.
-3. Build the pipeline from [docs/pseudocode/polish-pipeline.md](docs/pseudocode/polish-pipeline.md). Default implementation is the open-source stack so filler words stay ignored (strikethrough), not hard-deleted. A Descript `POST /v1/jobs/agent` job is the alternate backend.
+3. Build from [docs/pseudocode/polish-pipeline.md](docs/pseudocode/polish-pipeline.md) and [docs/pseudocode/editor/overview.md](docs/pseudocode/editor/overview.md). Default backend is the open stack: filler words stay ignored, and caption style is a local `CaptionStyle`. Burn-in is optional. A Descript `POST /v1/jobs/agent` job is the alternate backend and does not carry style.
 4. Leave eye contact as a research note until a live API probe shows a reliable prompt or operation. It does not block the MVP.
 
 Working hypothesis, not a decision: a public-API job plus a rescript-like transcript editor is a better Polish Clips MVP than cloning the Descript web app. The current rescript `LICENSE` is PolyForm Noncommercial, so read [docs/reuse-rescript.md](docs/reuse-rescript.md) before copying any of that code.

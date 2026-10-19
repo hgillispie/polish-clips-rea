@@ -19,12 +19,19 @@ input:
     enhance_strength "low" | "medium" | "high"
     skip_ignored     boolean         # default true
     publish          boolean         # default false; descript_api backend only
+    caption_style    CaptionStyle | null   # null = preset "bottom-center"; local only
+    burn_in          boolean         # default false; optional frame burn-in
+    open_in_editor   boolean         # default true for open and hybrid
 output:
   transcript         Transcript      # with filler and retake flags
   enhanced           MediaAsset | null
   captions_srt       string
   captions_vtt       string
-  clip               MediaAsset
+  cues               Cue[]
+  caption_style     CaptionStyle
+  composition        Composition | null
+  clip               MediaAsset       # unburned cut
+  burned             MediaAsset | null
   report             PipelineReport
 
 PipelineReport
@@ -77,6 +84,7 @@ function polish(input) -> output:
     playback_media = mux_video_with(asset, enhanced)               # video clock unchanged
 
   srt, vtt, cues = build_captions(transcript, default_caption_options)
+  style = input.options.caption_style or preset_style("bottom-center")
   report.stage("captions", ok=true, detail=len(cues))
 
   selection = input.selection or whole_transcript_selection(transcript)
@@ -85,8 +93,34 @@ function polish(input) -> output:
   )
   report.stage("clip", ok=true, detail=cut_report.duration_seconds)
 
-  write_sidecars(clip, srt, vtt, transcript_json=transcript)
-  return { transcript, enhanced, captions_srt: srt, captions_vtt: vtt, clip, report }
+  composition = null
+  fonts = []
+  if input.options.open_in_editor:
+    name = input.descript.project_name if input.descript is set else "Polish"
+    project = empty Project(name=name)
+    composition = composition_from_polish(     # editor/overview.md
+      project, playback_media, transcript, cues, style, enhanced
+    )
+    fonts = project.fonts
+    report.stage("editor", ok=true, detail=composition.id)
+
+  burned = null
+  if input.options.burn_in:
+    if not clip.has_video:
+      report.stage("burn_in", ok=false, detail="no video stream")
+    else:
+      try:
+        burned, burn_report = burn_captions(  # caption-burnin.md
+          clip, cues, style, fonts, { renderer: "auto" }
+        )
+        report.stage("burn_in", ok=true, detail=burn_report.renderer)
+      catch RenderError as err:
+        report.stage("burn_in", ok=false, detail=err.message)
+        # clip and sidecars still return
+
+  write_sidecars(clip, srt, vtt, transcript_json=transcript, style_json=style)
+  return { transcript, enhanced, captions_srt: srt, captions_vtt: vtt,
+           cues, caption_style: style, composition, clip, burned, report }
 ```
 
 `whole_transcript_selection` uses the first and last word ids. `write_sidecars` places the SRT, VTT, and `polish.transcript.v1` JSON next to the clip file, outside git if that directory is a capture folder.
@@ -238,6 +272,8 @@ Publish stays off unless `options.publish` is true. `publish_composition` posts 
 
 On `QuotaError` from `underlord_polish`, `polish_black_box` fails the run. Unlike `hybrid`, there is no local word model to fall back to unless the caller re-runs with `backend: "open"`.
 
+`polish_black_box` does not apply `CaptionStyle` or local burn-in. Underlord's caption look is whatever the prompt produced. Local style runs on `open` and `hybrid` only.
+
 ## Stage failure policy
 
 | Stage | Failure | Continue? |
@@ -248,7 +284,9 @@ On `QuotaError` from `underlord_polish`, `polish_black_box` fails the run. Unlik
 | ASR | Worker error | No word pipeline. API-only black box may still run Underlord |
 | Fillers skipped | Cue alignment | Yes, reported |
 | Enhance | Model or 402 | Yes, on the original audio |
-| Captions | Empty word list | Yes, empty sidecar |
+| Captions | Empty word list | Yes, empty sidecar. Burn-in is then skipped |
+| Caption style rejected | Bad font or color | Yes. Fall back to preset `bottom-center` and record the reason |
+| Burn-in | Renderer failed | Yes. Keep the unburned clip and the sidecars |
 | Clip | Empty selection | No |
 | Agent 402 / error | Credits or `error_message` | `hybrid`: yes, local stages still run. `descript_api`: no |
 
@@ -256,7 +294,7 @@ On `QuotaError` from `underlord_polish`, `polish_black_box` fails the run. Unlik
 
 | Backend | When to choose it |
 | --- | --- |
-| `open` | Default MVP. Ignore semantics, no token, no credits. Editor behaviour from these specs, informed by rescript's public feature list and not by its code ([../reuse-rescript.md](../reuse-rescript.md)) |
+| `open` | Default MVP. Ignore semantics, local caption style, optional burn-in, editor composition. No token. Informed by rescript's public feature list, not by its code ([../reuse-rescript.md](../reuse-rescript.md)) |
 | `descript_api` | You want Underlord's Studio Sound or a publish URL, and you accept that ignore-versus-delete is unverified |
 | Hybrid (local transcript + optional agent) | Best reading of the current evidence. The editor owns words. The API is a job you can diff. Described above; turn it on by running `transcribe` even when an import exists |
 

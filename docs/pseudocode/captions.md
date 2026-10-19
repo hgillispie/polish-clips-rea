@@ -23,6 +23,13 @@ Cue
   end_seconds         number
   text                string
   speaker_id          string | null
+  words               CueWord[]   # source words that formed the line; empty for cue alignment
+
+CueWord
+  word_id             string
+  text                string
+  start_seconds       number
+  end_seconds         number
 ```
 
 ## Algorithm
@@ -41,7 +48,11 @@ function build_captions(transcript, options) -> (srt, vtt, cues):
     end = bucket.last.end_seconds
     if end - start < options.min_duration:
       end = start + options.min_duration
-    cues.append(Cue(len(cues)+1, start, end, text, bucket[0].speaker_id))
+    cues.append(Cue(
+      index=len(cues)+1, start, end, text,
+      speaker_id=bucket[0].speaker_id,
+      words=[CueWord(w.id, w.text, w.start_seconds, w.end_seconds) for w in bucket]
+    ))
     bucket = []
 
   for word in words:
@@ -78,7 +89,7 @@ function join_display(words) -> string:
   return " ".join(w.text.trim() for w in words if w.text.trim() != "")
 ```
 
-Cue alignment (`transcript.alignment == "cue"`): each non-ignored "word" is already a line. Emit one cue per line. Do not reflow.
+Cue alignment (`transcript.alignment == "cue"`): each non-ignored "word" is already a line. Emit one cue per line. Do not reflow. Leave `words` empty so karaoke can see that there are no word times.
 
 ## SRT and VTT
 
@@ -121,7 +132,9 @@ UTF-8, no BOM. If `speaker_id` is set and the transcript has more than one speak
 | Word with `end < start` | Reject the transcript; this violates [transcript-model.md](transcript-model.md) |
 | Overlapping cues after padding `min_duration` | Pull the previous cue's end back to this cue's start so cues do not overlap |
 
-No 402. Caption **burn-in** (drawing text into the video) is out of scope for this file. The MVP delivers sidecar SRT and VTT.
+No 402. This file's required output is the sidecar SRT, the sidecar VTT, and `Cue[]`.
+
+Style (font, color, position, karaoke) is [caption-style.md](caption-style.md). Drawing those cues into frames is [caption-burnin.md](caption-burnin.md), an optional export. Both are local. The OpenAPI has no caption-style schema (static), so Underlord cannot be told a `CaptionStyle`.
 
 ## Descript API option
 
@@ -154,6 +167,8 @@ function export_descript_srt(client, project_id, composition_id) -> string:
 
 | Option | Notes |
 | --- | --- |
-| Local cue builder (this file) | Default. Honors `ignored` |
+| Local cue builder (this file) | Required. Honors `ignored`. Word spans feed karaoke |
+| Local `CaptionStyle` + preview | Required for the editor. [caption-style.md](caption-style.md) |
+| Local burn-in | Optional export. [caption-burnin.md](caption-burnin.md) |
 | Descript SRT export | Fast check of the server transcript. Cue-level, may still contain fillers |
 | Underlord "add captions" | In-project captions, credit-metered, style uncontrolled |
