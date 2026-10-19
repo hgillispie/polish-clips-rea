@@ -4,7 +4,7 @@ Source: `https://staging-docs.descriptapi.com/openapi.yaml`, fetched 2026-10-19.
 
 Human docs: [https://docs.descriptapi.com/](https://docs.descriptapi.com/). The staging document is the shape authority for this repo when it disagrees with earlier notes.
 
-Tag: every shape in this file is **static** unless a sentence says inferred or unknown.
+Tag: OpenAPI shapes in this file are **static** unless a sentence says inferred or unknown. The section **Editor project AI routes** is the web client, build `react19/9a29d61183bce669600a9dd9a1f8588d708becac`. Those claims are **static-bundle** or **decompiled**. That host is `https://api.descript.com`. It is not `https://descriptapi.com`. Chunk 88 contains zero occurrences of `descriptapi.com`.
 
 ## Auth, quota, rate limit
 
@@ -156,7 +156,7 @@ Official prompt examples in the spec (behavioural targets, not code):
 - `remove the section from 1:30 to 2:15`
 - CLI sample: `Remove filler words and add Studio Sound to all clips`
 
-No schema field sets Studio Sound intensity, filler ignore-versus-delete, caption style, or eye contact.
+No schema field on **this** OpenAPI sets filler ignore-versus-delete, caption style, eye contact, a background mask, or lip-sync. Studio Sound intensity is also absent here. The web client is different: see **Editor project AI routes** below. `studioSoundIntensity` exists on the audio ref there, and the speech-enhancement POST sends a model `version`, not a low/medium/high strength.
 
 ## POST /export/transcript
 
@@ -195,10 +195,77 @@ Success result requires `status`, `composition_id`, `share_url`. Also `media_typ
 | `GET` | `/published_projects/{publishedProjectSlug}` | Public metadata plus a **VTT** `subtitles` string and a time-limited `download_url` |
 | `POST` | `/edit_in_descript/schema` | Partner "Edit in Descript" import URL. Access is gated; the spec says to contact Descript. Out of scope |
 
+## Editor project AI routes
+
+Source: chunk `88.fc0ea62a7f115f3adca9.js` of the public web client, sliced 2026-10-19. Not the OpenAPI above. A logged-in editor session calls these. Polish Clips does not ship that session. The shapes are the contract the effect specs follow. An MCP string `https://api.descript.com/v2/mcp` is also present (**static-bundle**). Login-walled responses were not fetched.
+
+Shared helper (**static-bundle**):
+
+- `POST /projects/{projectId}/{endpoint}` with JSON from `payloadJsonFromPayload`.
+- `GET /projects/{projectId}/{endpoint}/{taskId}` to poll.
+- HTTP 429 is caught and returned as `{id: taskId, state: "hold"}`. That is a wait, not a hard failure.
+- If the response has `result`, it is passed through `resultFromResultJson`. Other `state` strings were not named (**unknown**).
+
+| Endpoint | Task name | displayName | artifactType | type | POST body |
+| --- | --- | --- | --- | --- | --- |
+| `eye_gaze_correction` | `eye_contact` | Eye Contact | `eye_contact` | `artifact` | `{asset_id}` |
+| `background_removal` | `background_mask` | background effect (removal or blur) | `background_mask` | `blocking` | `{asset_id}` |
+| `face_tracking` | `center_active_speaker` | center active speaker | `face_tracking` | `artifact` | `{asset_id}` |
+| `lip_sync` | `imputation_lip_sync` | Video Regenerate | `imputation_lip_sync` | `artifact` | imputation object below |
+| `lip_sync` | `translation_lip_sync` | lip-sync | `translation_lip_sync` | `artifact` | translation object below |
+| `speech_enhancement` | `studio_sound` | Studio Sound | `speech_enhanced` | `blocking` | `{audio_asset_id, audio_artifact_id, version?}` |
+
+Eye-contact result JSON uses plural `artifact_ids`. Background removal, face tracking, and both lip-sync variants use singular `output_artifact_id`, which the client wraps in a one-element `artifactIds` array. Speech enhancement returns `speech_enhancement_audio_asset_id` and `speech_enhancement_audio_artifact_id`.
+
+`version` on speech enhancement is omitted when `studioSoundModel` is `auto`. Otherwise it is `v1` or `v3_5`. Effect id string `com.descript.studioSound`.
+
+### lip_sync bodies (static-bundle)
+
+Imputation (Video Regenerate). `additionalData` is required or the client throws `"additionalData is required for lip sync"`.
+
+```text
+{
+  asset_id,
+  audio_artifact_id,
+  audio_artifact_time_range,    # imputationAudioTimeRange
+  prefix_urls,
+  suffix_urls,
+  to_be_replaced_urls,
+  variant: "imputation",
+  composition_id
+}
+```
+
+Translation uses the same path with `variant: "translation"`, `prefix_urls: []`, `suffix_urls: []`, and `audio_artifact_time_range` taken from `dubAudioTimeRange`.
+
+`validTypes` for both lip-sync tasks is `["audio"]` (the driving artifact). `displayInSuperToast` is false. This is not kebab `generate-video`.
+
+### HD effect ids (static-bundle, ~3772069)
+
+`com.descript.backgroundBlur`, `com.descript.backgroundRemoval`, `com.descript.eyeContact`, `com.descript.speakerFocus`, `com.descript.uplighting`, `com.descript.portraitLighting`.
+
+`background_removal.effectTypes` is blur, removal, uplighting, and portrait lighting. One mask artifact serves all four.
+
+### Credits (static-bundle category map)
+
+| Key | Category | Integer recovered |
+| --- | --- | --- |
+| `eye_contact`, `green_screen`, `background_blur` | `ai_effects` | 10 per use (agent schema) |
+| `skin_smoothing` | `ai_effects` | 5 per file, first apply |
+| `center_active_speaker` | `ai_effects` | none |
+| `studio_sound` | `ai_effects` | none |
+| `draft_a_title`, `draft_show_notes`, `draft_youtube_description`, `draft_social_post`, `summarize` | `ai_writing` | none |
+| `ai_regenerate_audio` | `ai_speech` | none |
+| `lip_sync`, `ai_regenerate_video`, `ai_gen_video` | `ai_media_generation` | none |
+
+Writing actions (`suggest-title`, `youtube-description-v2`, `show-notes-v2`) and the skill `prepare-for-publish` are not these POSTs. They are documented in [pseudocode/youtube-titles-descriptions.md](pseudocode/youtube-titles-descriptions.md).
+
+402 on these project routes was not traced (**unknown**). The OpenAPI 402 rules above stay on `descriptapi.com` only.
+
 ## Gaps that change the build
 
 1. No word-level transcript JSON. The open-source stack must produce its own timings (or accept cue-level SRT).
 2. No ignore/strikethrough field. Official copy says "remove". Whether Underlord strikes words through or deletes them is **unknown** until a fixture probe compares the exported transcript with the source.
-3. No per-feature endpoints for fillers, retakes, Studio Sound, captions, or eye contact. One prompt can ask for several of them; the only structured outcomes are `agent_response`, `project_changed`, and credit counters.
+3. The public OpenAPI has no per-feature REST fields for fillers, retakes, Studio Sound, captions, or eye contact. One `/v1/jobs/agent` prompt can ask for several of them; the only structured outcomes on that host are `agent_response`, `project_changed`, and credit counters. The editor client does have project routes for eye gaze, background removal, face tracking, lip sync, and speech enhancement, on `api.descript.com`, documented above. Those are not OpenAPI operations.
 4. `fps` on import compositions is ignored.
 5. `export/timeline` is named in the job discriminator and undefined in this snapshot.

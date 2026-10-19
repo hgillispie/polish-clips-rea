@@ -69,6 +69,8 @@ Place the wav with [editor/voiceover.md](editor/voiceover.md) `import_voiceover`
 
 There is no OpenAPI field for this (**static**). Do not send the consent recording to `POST /jobs/agent`.
 
+Video Regenerate is a second gate. A synthetic line needs this `ConsentRecord` before the audio exists, and a separate visual confirmation before `lip_sync` variant `imputation` ([video-regenerate.md](video-regenerate.md)). A punch-in does not need the voice record. It still needs the visual confirmation if the picture will be rebuilt. Translation lip-sync (`variant: "translation"`) is not this feature.
+
 ## Build options
 
 | Path | When |

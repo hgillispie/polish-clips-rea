@@ -7,7 +7,7 @@ Public help and one public changelog note. No decompiled bundles. Fetched 2026-1
 | Name | What the public page says | Tag |
 | --- | --- | --- |
 | Custom AI Speaker / voice clone | The speaker records a consent statement, then Descript can generate speech in that voice. Help title: “Create a custom voice clone.” | static |
-| Regenerate | Smooth a section without changing the words, or replace words using an authorized custom AI speaker. English only. Video regenerate is limited (face visible; not sequences, B-roll, or multi-speaker). The first video regenerate asks for consent because it changes the visual performance | static |
+| Regenerate | Smooth a section without changing the words, or replace words using an authorized custom AI speaker. The picture step is a different cloud task: `lip_sync` variant `imputation`, displayName `Video Regenerate` (**static-bundle**). See [video-regenerate.md](video-regenerate.md). It is not kebab `generate-video` | static-bundle |
 | Overdub | A Descript changelog (Release 103) says the Overdub label was retired and that changing the script is now Regenerate, with the same voice-authorization step | static (changelog) |
 | Stock AI voices | Built-in voices for voiceover, not the user’s voice | static |
 | Convert recorded audio to AI speech | Replaces recorded script audio with a stock or custom AI speaker | static |

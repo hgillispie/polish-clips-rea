@@ -2,6 +2,8 @@
 
 Find an earlier attempt of a line and ignore it, keeping the later take. Same `ignored` flag as fillers, plus `retake` and `retake_group_id`, so a restore brings the abandoned take back without un-ignoring fillers inside it unless those are restored separately.
 
+The web client's action id is `remove-retakes-v2`, credit key `remove_retakes` → `ai_editing` (**static-bundle**). The local ignore rules below are unchanged.
+
 ## Input / output
 
 ```text

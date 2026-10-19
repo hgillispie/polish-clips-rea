@@ -80,17 +80,63 @@ Two backends, one pipeline. The orchestrator is specified in [pseudocode/polish-
 | Backend | Owns | Limit |
 | --- | --- | --- |
 | Open stack | Word model, ignore flags, retake marks, local enhance, caption cues, caption style, optional burn-in, the editor timeline | Quality of the chosen ASR and denoiser |
-| Descript API | Import + server transcription, Underlord prompt, publish URL | No word-level JSON, no ignore flag, and no caption-style schema (static). Prompt wording is the only control |
-
-Eye contact sits beside the pipeline as a research note ([feature-inventory.md](feature-inventory.md)). It is not a stage.
+| Descript API (`descriptapi.com/v1`) | Import + server transcription, Underlord prompt, publish URL | No word-level JSON, no ignore flag, and no caption-style schema (**static** OpenAPI). Prompt wording is the only control on this host |
+| Editor project routes (`api.descript.com`) | Eye gaze, background mask, face tracking, lip-sync imputation, speech enhancement | Not the public OpenAPI. Specs in [pseudocode/visual-effects-model.md](pseudocode/visual-effects-model.md). Later than the polish pipeline |
 
 The local editor (tracks, layers, mixer, transcript-linked edits) is specified under [pseudocode/editor/](pseudocode/editor/). It is our canvas, not a clone of the Descript window.
+
+## Effect and artifact pipeline
+
+Recovered from the public web bundle (build `react19/9a29d61183bce669600a9dd9a1f8588d708becac`, chunk 88). Tags: **static-bundle**. The desktop ASAR does not contain this graph.
+
+```text
+operator toggles an effect on a video or audio ref
+        │
+        ▼
+media flags
+  eyeContactRequested          beautifyRequested
+  backgroundMaskRequested      speakerFocusRequested
+  portraitLightingRequested    speechEnhanceEnabled
+  uplightingRequested          lipSyncRequested
+        │
+        ▼
+POST https://api.descript.com/projects/{id}/{endpoint}
+  eye_gaze_correction     → artifact eye_contact          type artifact
+  background_removal      → artifact background_mask      type blocking
+  face_tracking           → artifact face_tracking        type artifact
+  lip_sync  variant=imputation   → imputation_lip_sync    displayName "Video Regenerate"
+  lip_sync  variant=translation  → translation_lip_sync   displayName "lip-sync"
+  speech_enhancement      → artifact speech_enhanced
+        │
+        │  GET .../{endpoint}/{taskId}
+        │  HTTP 429 → { id, state: "hold" }
+        ▼
+inputArtifactType is "original" on these tasks
+(server jobs do not chain; the client composites)
+        │
+        ▼
+ordered VisualEffectNode list on the layer
+  HD ids com.descript.eyeContact | backgroundBlur | backgroundRemoval
+        | portraitLighting | uplighting | speakerFocus
+  local: com.descript.chromakey, com.descript.colorAdjustments, skin_smoothing
+        │
+        ▼
+preview and export (layers.md apply_visual_effects, then crop and transform)
+```
+
+One `background_removal` POST feeds blur, green screen, portrait lighting, and uplighting. Eye contact, face tracking, and lip sync are separate POSTs. Skin smoothing sets `beautifyRequested` and has no recovered endpoint; the agent copy charges 5 AI credits per file on first apply.
+
+`generate-video` is not in this diagram. It is a kebab in the generative action set. Video Regenerate is only the imputation branch.
+
+Publish AI (`suggest-title`, `youtube-description-v2`, `show-notes-v2`, skill `prepare-for-publish`) does not enter this graph and does not call `POST /v1/jobs/publish`.
 
 ## Out of scope for this architecture
 
 - Cloning the Descript web UI.
 - Recovering native add-ons from the desktop app.
 - Credential capture or auth bypass.
-- Translate / dub, Rooms, Brand Studio.
+- Translate / dub as a product (`variant: "translation"` is documented so it is not mixed up with Video Regenerate). Rooms, Brand Studio.
+- Kebab `generate-video` (prompt to a new clip).
+- Pasting recovered JavaScript into this repo. Specs cite symbols only.
 - A voice clone without the consent gate in [pseudocode/voice-consent.md](pseudocode/voice-consent.md). Punch-in voiceover does not need that gate.
 - Video object removal as an MVP stage. The later spec is [pseudocode/object-removal.md](pseudocode/object-removal.md).
