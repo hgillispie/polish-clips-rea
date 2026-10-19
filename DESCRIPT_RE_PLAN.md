@@ -1,238 +1,131 @@
-# Plan: understanding how Descript works, using REA
+# Plan: Polish Clips, from Descript's public surface
 
-Status: draft for review. Nothing in this plan has been run against Descript yet.
+Status: scope locked on 2026-10-19. Desktop shell confirmed. API shapes taken from the staging OpenAPI. No application code in this revision.
 
-## 1. What REA is and how it works
+Evidence tags used below: **static** (file or spec), **observed** (seen during the session), **inferred** (reasoned from those).
 
-REA ("Reverse Engineer Anything", `rea-agents` on npm, v6.7.0 installed) is an
-MCP server plus a CLI. Your agent calls REA tools; REA inspects a local target
-and returns **Evidence**: findings with their source location, a confidence
-level, and the limits of what was observed. The agent turns that into
-explanations or code. Everything runs locally.
+## 1. Product
 
-Relevant to Descript:
+**Polish Clips** is a transcript-first polish pipeline plus a local editor. It is not a 1:1 Descript clone.
 
-| Descript surface | REA route | Needs a native engine (Ghidra/Hopper/IDA)? |
-| --- | --- | --- |
-| Web app (JS + WASM bundles) | `analyze-web-bundle`, `export-web-scripts`, `inspect-wasm-artifact`, `trace-web-module-imports` | No (WASM needs WABT) |
-| Desktop app (Electron `app.asar`) | `analyze-javascript-application`, `inspect-electron-fuses`, `trace-application-feature` | No |
-| Live behaviour (page or Electron) | `list-browser-targets` / `list-electron-targets`, `observe-web-session`, `capture-browser-scenario`, `capture-electron-scenario` | No |
-| Saved traffic (HAR from DevTools, Fiddler SAZ) | `inspect-web-network-capture` | No |
-| Native add-ons / media libs inside the desktop app | `inspect-artifact`, then Hopper / Ghidra / IDA | Yes, only if needed |
+In scope, in order:
 
-Two kinds of REA output, kept distinct on purpose: **static** (read from files,
-nothing executed) and **passive runtime** (observed while *you* use the app). REA
-labels which is which, so we can tell "the code contains X" from "X happened".
+1. Import and transcribe with word-level timings.
+2. Filler removal with nondestructive **ignore** (strikethrough) semantics.
+3. Retake removal / tighten.
+4. Studio Sound–class denoise and enhance.
+5. Caption cues (SRT / VTT) and a **local** caption style (font, color, position, karaoke). Style is not an OpenAPI field.
+6. Clip cutting from a transcript selection.
+7. Editor foundation: composition, tracks, layers, mixer, transcript-linked edits, preview. Specs in [docs/pseudocode/editor/](docs/pseudocode/editor/).
+8. Caption burn-in into frames, optional on export.
+9. Publish / export, secondary.
+10. Editor additions, after the single-camera canvas: voiceover (punch-in), image/video/GIF overlays, optional stock search, self-record with a local matte, waveform alignment for two clips.
+11. Later AI, specified from public help and not from decompilation: skin smoothing, image object removal (video inpainting off by default), and a consented voice clone. Punch-in voiceover is the default way to replace a line.
 
-## 2. Install status (done in this session)
+Eye contact stays a research note. It is not skin smoothing. Translate, dub, Rooms, Brand Studio, and collaboration stay later. A voice that sounds like a person is out of the default build until [docs/pseudocode/voice-consent.md](docs/pseudocode/voice-consent.md) is satisfied.
 
-- Cloned `morluto/rea`; installed the CLI with `npm install --global rea-agents` (6.7.0).
-- Ran `rea setup --client claude_code --yes`. That added an MCP entry to
-  `/root/.claude.json` (backup at `/root/.claude.json.rea.backup`) and the skill at
-  `/root/.claude/skills/reverse-engineer-anything`. `rea doctor` reports healthy for
-  Node 22.22, the Claude Code registration and the skill.
-- Smoke test: `rea analyze-javascript-application` on a small synthetic Electron app
-  recovered both IPC channels, the `contextBridge` surface and the fetch endpoint.
-- Hopper, Ghidra, IDA, JADX and Kuna are **not** installed. Only native-binary work
-  needs them; the Electron/web path does not.
-- Caveat: the MCP tools only load into a Claude Code session started *after*
-  setup, so they are not callable in the session that ran the install. The CLI works now.
+## 2. What is already established
 
-**This container cannot reach descript.com, help.descript.com or descriptapi.com**
-(network policy; npm and GitHub work). It also has no Mac/Windows Descript app. So
-the Descript analysis itself should run on **your machine**, where you are already
-logged in. That also means I never need your password; please do not paste it anywhere.
+### Desktop app is a thin shell (static)
 
-## 3. Constraints to settle before Phase 3
+macOS Descript **2.21.1** (`com.descript.beachcube`) at `/Applications/Descript.app` ships `Resources/app.asar` as a thin Electron Forge shell (packaged ~987 KB). The main process `loadURL`s a remote UI:
 
-1. **Terms of service.** A third-party tracker (ConductAtlas) reports that Descript's
-   terms prohibit decompiling or disassembling the app and uncovering source code or
-   trade secrets. I could not read Descript's own terms from here, so this is
-   unverified. Someone should read the current terms (and ask legal if the output will
-   feed a competing product) before Phases 3 and 4. Phases 1 and 2 use the product and
-   its documented API as intended and do not raise this.
-2. **REA's own rules.** REA's `DISCLAIMER.md` says it does not support copying
-   proprietary software or reproducing its protected code and assets, or bypassing
-   authentication or access controls. The plan is built around that.
-3. **Clean-room split.** Analysis produces behavioural specs, protocol facts and
-   input/output examples. Implementation happens from those specs, not from Descript
-   code. Do not paste decompiled or recovered Descript source into the new codebase.
-4. **Your own account and content only.** No bypassing the paywall, credit limits or
-   rate limits; no bulk or scripted use beyond what the documented API allows; no
-   attempt to extract other users' data or server-side models and prompts.
-5. **Traffic captures are sensitive.** HARs contain session tokens and media URLs.
-   Keep them out of git (this repo's `.gitignore` should exclude `captures/`), redact
-   before sharing, and rotate the session when finished.
-
-## 4. What is publicly known (from search results; the pages themselves were not reachable from here)
-
-- Descript launched in 2018 as an **Electron** app and said Electron let it use web
-  tech for the UI while keeping native C/C++ libraries such as FFmpeg/libav and SQLite.
-- Descript later rebuilt the media engine so it runs in a browser, dropping those
-  native dependencies. Its blog describes a **WebCodecs-based export pipeline**, a new
-  web app, and a **desktop preview running on the same engine**.
-  Implication: the web app is probably the richest and most current target, and the
-  desktop app may now be a thin shell over the same engine rather than a separate
-  codebase. Confirm in Phase 4 by diffing the two.
-- Descript documents a **public API (beta)** at `descriptapi.com/v1/...` with
-  token-per-Drive auth and an asynchronous job model (import media, transcribe, set up
-  a composition; Underlord actions such as Studio Sound, filler-word removal and
-  captions). Quota exhaustion returns HTTP 402. There is also a Descript **MCP server**
-  that uses your Descript login instead of an API token.
-
-## 5. Phases
-
-### Phase 0: scope and sign-off (you, about 30 minutes)
-
-- Pick the features that matter. Working assumption, based on this repo's name: the
-  "polish a clip" pipeline (filler-word and retake removal, Studio Sound, eye contact,
-  captions, clip cutting). **Correct this list if it is wrong**; it sets the priority of everything below.
-- Read the current Descript terms (Section 3.1) and decide go/no-go for Phases 3 and 4.
-- Tell me whether your desktop app is macOS or Windows.
-
-Exit: a ranked feature list and a written go/no-go.
-
-### Phase 1: feature inventory with your paid account (you drive, no reverse engineering)
-
-The goal is to know what exists before asking how it works. For each feature, fill
-one row of `feature-inventory.csv`:
-
-`feature | where in UI | input | output | runs on (instant = likely local, queued = likely server) | credit or minute cost | limits/plan gating | export formats | screen-recording filename`
-
-Candidate checklist (from memory and search; confirm each against your plan, add
-what is missing):
-
-- Transcript-based editing (delete words, cut media), multitrack timeline, scenes/layouts
-- Underlord (AI co-editor) actions: remove filler words, remove retakes, Studio Sound,
-  eye contact, create clips, captions, show notes/chapters, translate/dub
-- Studio Sound, Eye Contact, Green Screen, Overdub / AI voices
-- Recording: screen recording, Rooms (remote recording)
-- Collaboration: comments, shared Drives, publish/share pages
-- Export: video and audio formats, SRT, editor interchange formats (e.g. Premiere/FCPXML),
-  transcript export
-- Integrations: API, MCP, Zapier, Raycast
-
-Also create **fixtures**: three short test clips you own (clean speech, speech with
-fillers and retakes, noisy audio). Run each feature once on each fixture and keep the
-inputs and outputs. These double as golden tests in Phase 6.
-
-Exit: a complete inventory and fixtures. Timing matters too: record how long each
-feature takes, because latency is the cheapest clue to local-versus-server work.
-
-### Phase 2: the documented surface (API and MCP; sanctioned black-box)
-
-- Read the OpenAPI spec and the MCP tool list. Create a token for a **test Drive**.
-- Replay each Phase 1 feature through the API on the fixtures. Record request/response
-  shapes, job states, polling behaviour, error codes and credit accounting.
-- Output: `api-notes.md` mapping each UI feature to an API operation or noting that no
-  API equivalent exists. Anything with an API equivalent may not need reverse
-  engineering at all; building on the API could be the right answer for some features.
-
-### Phase 3: the web app (REA runs on your machine; needs Section 3.1 go)
-
-Install REA on your laptop and run `npx rea-agents setup` there (pick your agent,
-restart it). Then, with Chrome open and logged in to Descript:
-
-1. **Passive observation while you work.** Start Chrome with
-   `--remote-debugging-port=9222`, then `list-browser-targets` and
-   `observe-web-session` while you perform *one* feature at a time from the Phase 1
-   list. Passive mode records requests, script sources and storage key names but not
-   header values or raw bodies, which keeps tokens out of the evidence.
-2. **Bundle analysis.** `analyze-web-bundle` / `export-web-scripts`, then
-   `analyze-javascript-application` on the exported scripts. Use
-   `recover-javascript-sources` (needs Wakaru) only if the bundles are minified past reading.
-3. **WASM.** `inspect-wasm-artifact` (needs WABT) on the media-engine modules: imports,
-   exports and sections only. This shows the engine's *interface* (what the JS side asks it to do).
-4. **Scenarios.** Once you know the steps, `capture-browser-scenario` with declared
-   actions gives a repeatable capture; `compare-web-captures` diffs two runs.
-
-Questions this phase answers, per feature:
-
-| Question | Evidence source |
+| Environment | Host |
 | --- | --- |
-| Client-side or server-side? | Network calls during the action versus none; WASM imports |
-| What is sent to the server (audio, transcript, edit list, none)? | `observe-web-session` request metadata |
-| Transcript data model: words, timestamps, speakers, confidence? | Exported scripts plus a transcript export you did yourself |
-| How are edits stored and synced (operation log, CRDT, snapshot)? | WebSocket / sync endpoints, module graph |
-| Upload and job protocol (chunking, signed URLs, polling or push)? | Request sequence for one import |
-| Render/export path (WebCodecs versus server render) | Script graph; network during export |
-| Where do AI features run, and what do their requests and responses look like? | Request shapes for Underlord actions |
+| prod | `https://web.descript.com` |
+| staging | `https://staging-web.descript.com`, `https://staging-api-web.descript.com` |
+| qa | `https://qa-web.descript.com` |
+| local | `https://local-dev.descript.com:3000` |
 
-### Phase 4: the desktop app (your machine; needs Section 3.1 go)
+URL schemes: `descript`, `descriptbc`. Shell dependencies include `@sentry/electron`, `electron-store`, `lodash`, `@electron/notarize`. Dev-dependency names hint at a larger monorepo (`@descript/electron-utils`, recorder, rust-mouse-tracker, sckit-helper); those packages are not inside the shipped ASAR. Main-window security prefs in the bundle: `nodeIntegration: false`, `contextIsolation` set, preload at `.webpack/renderer/main_window/preload.js`, `webSecurity: true`.
 
-1. Locate the app bundle (macOS: inside `Descript.app`; Windows: the install directory
-   containing `resources/app.asar`).
-2. `inspect-electron-fuses`, then `analyze-javascript-application` on the ASAR (static;
-   nothing executes). `trace-application-feature` follows a route, string or IPC channel
-   through main, preload and renderer.
-3. `compare-application-versions` between the desktop JS and the Phase 3 web bundles to
-   test the "same engine" hypothesis. If they match, desktop adds little beyond file
-   access, native menus and updates, and the web results already cover it.
-4. `list-electron-targets` / `capture-electron-scenario` for passive runtime observation of IPC.
-5. Native add-ons (`.node` files) only if something core lives there: `inspect-artifact`
-   first, then install Ghidra or Hopper. Treat this as optional and expensive.
+Extracted ASAR sha256: `bad2f88655ce569cba1a302fcf97a03fd86bdd26d88c4005e64e8043537a8605`. The Info.plist ElectronAsarIntegrity hash differs because it is the signed package hash.
 
-### Phase 5: synthesis
+Polish-clip behaviour lives in the **web app and descriptapi.com**, not in this ASAR. Phase 4 from the old plan is complete: the shell is thin. Further desktop reverse engineering is not a workstream.
 
-For each prioritised feature, one spec page:
+A Sentry DSN is present in the shell. Treat it as ops noise and do not copy it into specs.
 
-- Behaviour (inputs, outputs, edge cases), with Phase 1 fixtures as examples
-- Architecture (client/server split, data model, protocol), each claim linked to an
-  Evidence ID and marked *static*, *observed* or *inferred*
-- Unknowns, stated explicitly; REA marks what it could not establish
-- Build options: use Descript's API, build on open components (for example FFmpeg,
-  Whisper-class transcription, RNNoise-class denoising), or both. Compare cost and quality.
+### REA is on Grok Bot (observed)
 
-### Phase 6: build and verify
+The Grok Bot computer already runs REA as MCP: `npx -y rea-agents@6.7.0 mcp` (~207 tools). Node on that machine is 22.x. `rea analyze-javascript-application` on the Mac hit an `xcrun` / Swift ownership-helper failure; static strings and `package.json` were enough to confirm the thin shell. Live CDP or HAR remains optional if an API gap shows up, and deep bundle work still needs an explicit go.
 
-Implement from the specs only, then run the Phase 1 fixtures through both systems and
-compare outputs (word timings, cut points, loudness, caption timing). Differences
-become tickets or are accepted explicitly.
+There is no Claude Desktop config, no `/root/.claude.json`, and no Cowork setup in this plan. See [docs/grokbot-rea.md](docs/grokbot-rea.md).
 
-## 6. Prompts to use once REA is set up on your machine
+### Public API is the preferred black box (static)
 
-```text
-Use REA. I am logged in to Descript in Chrome on port 9222 with my own paid account.
-Do not log in for me and do not send anything to Descript. Passively observe the
-session while I run "Remove filler words" on my test clip, then report: which network
-calls happened, what data left the browser, which script modules handled it, and
-what remains unknown. Cite the Evidence for each claim and mark it static, observed or inferred.
-```
+Base URL in the OpenAPI `servers` entry: `https://descriptapi.com/v1`. Human docs: [docs.descriptapi.com](https://docs.descriptapi.com/). This repo's shapes come from `https://staging-docs.descriptapi.com/openapi.yaml` (OpenAPI 3.0, info version `1.2`, fetched 2026-10-19). Summary: [docs/api-notes.md](docs/api-notes.md).
 
-```text
-Use REA to analyze the Descript desktop app at <path to app.asar> statically. Do not
-launch it. Report the main/preload/renderer split, IPC channels, native add-ons and
-update mechanism, and say whether the renderer bundle matches the web bundle I
-exported to <dir>. Do not reproduce source code; write behavioural findings only.
-```
+Auth is a Bearer token scoped to one Drive. Import spends **media minutes** and returns HTTP 402 when they run out. Agent edits spend **AI credits** and return HTTP 402 when those run out. Jobs are asynchronous: create, then poll `GET /v1/jobs/{job_id}` until `job_state` is `stopped`, then read `result.status`.
 
-## 7. Open questions for you
+The spec's own agent examples cover filler-word removal, Studio Sound, captions, and highlight clips as **natural-language prompts**, not as separate REST operations. Eye contact does not appear as an operation or schema field. Caption font, color, position, and burn-in are also absent: Polish Clips styles those locally.
 
-1. Which features are the real target? (Section 5, Phase 0)
-2. macOS or Windows desktop app?
-3. Has anyone read Descript's current terms, and is Phases 3 and 4 approved?
-4. Is the end goal parity inside your own product, or interoperability (for example
-   importing and exporting Descript projects)? Interoperability might need only Phase 2
-   plus export formats, and is the easiest to justify.
-5. Is it acceptable to allow `descript.com` in this cloud environment's network policy?
-   I would not recommend it. Logging in from a cloud container is awkward, and your
-   machine already has the session and the desktop app.
+## 3. Constraints that still apply
 
-## 8. Continuing in Claude Cowork or Grok Bot
+1. **Clean-room split.** Specs and pseudocode here; implementation later, from those specs. Do not paste Descript source into the new codebase.
+2. **Terms.** A third-party tracker reports that Descript's terms prohibit decompiling the app and uncovering source or trade secrets. That page was not re-read for this revision, so the report stays unverified. Public docs, the OpenAPI summary, and building from pseudocode proceed. Decompiling `web.descript.com` bundles does not, until someone reads the current terms and says go.
+3. **REA's own rules.** No copying proprietary code or assets, and no bypassing authentication or access controls.
+4. **Own account and content only.** No scripted use beyond what the documented API allows.
+5. **Captures are sensitive.** HARs hold session tokens and media URLs. They stay out of git. Redact, then rotate the session when finished.
 
-`COWORK_GROKBOT_PROMPT.md` has a self-contained prompt plus connection steps for
-each client. REA's MCP server is stdio-only, so there is nothing to keep running:
-each client starts its own copy. Cowork (through Claude Desktop) runs it on your
-computer, which is where your Descript login and desktop app are. Grok Bot runs it on
-its own hosted computer, which cannot see them.
+## 4. Phases
 
-## 9. Cheat sheet
+### Phase 0 — locked
 
-```bash
-npm install --global rea-agents          # CLI
-npx rea-agents setup                     # register with your agent, then restart it
-rea doctor --client claude_code --json   # readiness
-rea analyze-javascript-application /abs/path/to/app-or-asar --json
-rea inspect-web-network-capture /abs/session.har har --json
-rea update
-```
+Answered: the desktop app in this session is macOS; the feature list is the polish pipeline above; REA runs on Grok Bot; the goal is Polish Clips inside our own product, using Descript as a behavioural and API reference. Interoperability (import/export of Descript projects) is a side effect of the API, not the product goal.
+
+### Phase 1 — fixtures (still open, no reverse engineering)
+
+On a paid account you control, run each in-scope feature once and keep inputs and outputs **outside git**. Suggested fixtures: clean speech, speech with fillers and retakes, noisy audio. Time each run. Latency is the cheapest clue to local versus server work.
+
+Inventory table: [docs/feature-inventory.md](docs/feature-inventory.md). Fill the "observed cost" column when a token probe happens. The table is the inventory; a CSV can be generated from it later if a spreadsheet is useful.
+
+### Phase 2 — documented API (spec done; live probe optional)
+
+[docs/api-notes.md](docs/api-notes.md) records request and response shapes, job states, 402 versus 429, and the gaps (no word-level JSON, no filler-ignore field, no Studio Sound intensity, no eye-contact operation).
+
+Optional next measurement, with a test-Drive token that is never committed:
+
+- `POST /v1/jobs/import/project_media` on one fixture, poll until `stopped`.
+- `POST /v1/jobs/agent` with a filler + Studio Sound + captions prompt, poll, record `result.agent_response`, `ai_credits_used`, and `media_seconds_used`.
+- `POST /v1/export/transcript` with `format: srt`.
+- Note whether the transcript still contains the filler words (ignore) or has dropped them (hard delete). That single observation decides how faithfully the API backend can match our ignore semantics.
+
+Anything the API already does does not need bundle analysis.
+
+### Phase 3 — web app (optional, needs an explicit go)
+
+Only if Phase 2 shows a gap the product cannot accept (for example, ignore-versus-delete, or eye contact). Passive observation and HAR inspection are the first tools. Bundle decompilation waits on the terms check in section 3. Grok Bot can inspect a **redacted** HAR or an exported script directory you choose to upload. It does not see a logged-in browser on your Mac unless you attach one.
+
+### Phase 4 — desktop shell (done)
+
+Confirmed thin shell, section 2. Do not schedule ASAR diffing, Electron scenario capture, or native add-on work unless a future product requirement actually lives in the shell (file dialogs, URL schemes, updates).
+
+### Phase 5 — synthesis (this revision)
+
+Behavioural specs with build options:
+
+- [docs/pseudocode/polish-pipeline.md](docs/pseudocode/polish-pipeline.md)
+- [docs/pseudocode/transcript-model.md](docs/pseudocode/transcript-model.md)
+- [docs/pseudocode/filler-removal.md](docs/pseudocode/filler-removal.md)
+- [docs/pseudocode/retake-removal.md](docs/pseudocode/retake-removal.md)
+- [docs/pseudocode/studio-sound.md](docs/pseudocode/studio-sound.md)
+- [docs/pseudocode/captions.md](docs/pseudocode/captions.md)
+- [docs/pseudocode/caption-style.md](docs/pseudocode/caption-style.md)
+- [docs/pseudocode/caption-burnin.md](docs/pseudocode/caption-burnin.md)
+- [docs/pseudocode/clip-cut.md](docs/pseudocode/clip-cut.md)
+- [docs/pseudocode/underlord-agent-job.md](docs/pseudocode/underlord-agent-job.md)
+- [docs/pseudocode/editor/](docs/pseudocode/editor/) — timeline, layers, mixer, edits, render, UI wires, voiceover, overlays, stock providers, self-record, waveform align
+- [docs/descript-analysis/](docs/descript-analysis/) — public-help notes for skin smoothing, image object removal, and voice clone
+- [docs/pseudocode/skin-smoothing.md](docs/pseudocode/skin-smoothing.md), [object-removal.md](docs/pseudocode/object-removal.md), [voice-consent.md](docs/pseudocode/voice-consent.md)
+
+### Phase 6 — build and verify (later PR)
+
+Implement from the pseudocode only. Run the same fixtures through the open-source stack and, if a token exists, through one Underlord job. Compare word timings, which fillers were ignored versus deleted, cut points, loudness, and caption timing. Differences become tickets or accepted gaps.
+
+## 5. Build hypothesis
+
+A Descript API job plus a rescript-like transcript editor is a better MVP than cloning `web.descript.com`. The editor owns the word model and ignore flags. The API is an optional backend for import, transcription, Studio Sound, and publish. [docs/reuse-rescript.md](docs/reuse-rescript.md) explains why the current rescript tree is a reference, not a vendored dependency: its `LICENSE` is PolyForm Noncommercial 1.0.0 (GitHub displays that as "Other").
+
+## 6. Where to continue
+
+[README.md](README.md) is the operator index. [docs/grokbot-rea.md](docs/grokbot-rea.md) is the REA connection note. Implementation starts at [docs/pseudocode/polish-pipeline.md](docs/pseudocode/polish-pipeline.md).
