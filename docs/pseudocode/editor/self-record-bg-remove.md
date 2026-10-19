@@ -2,7 +2,7 @@
 
 Capture the operator's camera (and optional mic) while the composition preview plays, remove the background, and place the result as an overlay on the original timeline. The original camera clip stays. This is a picture-in-picture or a full-frame layer, not a destructive replace.
 
-Descript's help describes a **Green Screen** effect that removes a background with no physical screen, and a separate **Chroma Key** effect that is better when a real green screen is present (static, help center, fetched 2026-10-19). Those are their product features. This spec is a local capture pipeline. It does not call their effect.
+Green Screen on imported footage is `com.descript.backgroundRemoval` and the cloud task `background_removal` → artifact `background_mask` ([../green-screen.md](../green-screen.md)). Chroma key is the local color key ([../chroma-key.md](../chroma-key.md)). This file is the capture path. It writes a `BackgroundMask` the same shader reads. It does not POST `background_removal` during the take. Portrait Lighting, Uplighting, and Blur speaker background can use that mask afterwards without a second matte format.
 
 ## Input / output
 
@@ -39,6 +39,9 @@ function self_record(composition, options) -> output:
     if options.include_mic:
       audio.append(grab_audio(stream))
   asset = encode_with_alpha(frames, audio, fps=30)
+  asset.local_mask = BackgroundMask(
+    source = "chroma_fallback" if options.mode == "chroma" else "local_segmenter"
+  )
   overlay = add_overlay(composition, asset, t0, duration(frames))
   if options.placement == "pip":
     pip_preset(overlay.clip, options.pip_corner)
@@ -57,14 +60,16 @@ Default mode. A selfie-segmentation class model (MediaPipe selfie segmentation o
 
 ```text
 function matte_segmentation(bitmap) -> mask:
-  # mask: float 0..1 per pixel, 1 = keep (person)
+  # BackgroundMask channels the green-screen shader multiplies: r * a, 1 = keep.
   raw = segmenter.infer(bitmap)              # person probability
   raw = temporal_smooth(raw, previous_mask, alpha=0.6)
-  return refine_edges(raw, feather_px=2)
+  raw = refine_edges(raw, feather_px=2)
+  return { r: raw, a: raw, source: "local_segmenter" }
 
 function apply_matte(bitmap, mask) -> bitmap:
   out = bitmap with alpha
-  out.alpha = mask
+  keep = mask.r if mask has channel r else mask
+  out.alpha = keep
   return out
 ```
 
@@ -80,7 +85,8 @@ function matte_chroma(bitmap, key_color, threshold) -> mask:
     dist = color_distance(pixel.rgb, key_color) / max_distance
     # 0 = exact key (drop), 1 = far from key (keep)
     mask = clamp((dist - threshold) / 0.15, 0, 1)
-  return feather(mask, 1px)
+  mask = feather(mask, 1px)
+  return { r: mask, a: mask, source: "chroma_fallback" }
 ```
 
 Use this when the operator has a green or blue backdrop. It is also the fallback when segmentation is unavailable. Spill suppression (reducing green in the kept pixels) is a one-line despill toward neutral on pixels whose mask is between 0 and 1. Skip despill in segmentation mode.
@@ -101,13 +107,13 @@ A full-frame placement covers the original. The operator can lower opacity or sc
 | Alpha encode fails | Write color + matte sidecar. Fail only if both writes fail |
 | Preview playback underrun | Keep recording. The playhead time at start is what syncs the overlay |
 
-No 402. No Descript Green Screen job.
+No 402 on the capture itself. The stored mask is `source: "local_segmenter"`. Enabling Green Screen, blur, portrait, or uplight later calls `ensure_background_mask`, which reuses this mask and does not POST ([../green-screen.md](../green-screen.md)). Imported footage that has no local mask takes the cloud path and can spend the green-screen credit there.
 
 ## Build options
 
 | Path | When |
 | --- | --- |
-| MediaPipe-class segmentation | Default. On-device, no account |
+| MediaPipe-class segmentation | Default. On-device, no account. Fills `BackgroundMask` |
 | Another open person-segmenter on WebGPU | Swap the `segmenter` object. Same matte contract |
-| Chroma key | Fallback and for a real colored backdrop |
-| Descript Green Screen via an Underlord prompt | Unverified. The OpenAPI has no green-screen field (static). Do not block this feature on that prompt |
+| Chroma key | Fallback and for a real colored backdrop. Shader in [../chroma-key.md](../chroma-key.md) |
+| `POST /projects/{id}/background_removal` | Imported footage only, via [../green-screen.md](../green-screen.md). Not this capture |

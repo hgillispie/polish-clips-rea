@@ -1,38 +1,50 @@
-# Descript: skin smoothing (appearance touch-up)
+# Descript: skin smoothing
 
-Public help only. No decompiled bundles. Fetched 2026-10-19 from the Descript help center.
+Rewritten from the public web client, build `react19/9a29d61183bce669600a9dd9a1f8588d708becac` (2026-10-19). The previous revision of this file was help text only.
 
-## What the product is called
+Wakaru module **351916** (decompiled). Cloud-spec strings are **static-bundle** in chunk 88 `88.fc0ea62a7f115f3adca9.js`. The module body is not vendored here.
 
-The help page is titled **“Touch up your appearance with skin smoothing.”** The effect name in the UI steps is **Skin smoothing**. There is no separate help article whose title is “AI touch-up.”
+## Identity
 
-Skin smoothing is one item among several “look good” tools. It is not the same feature as:
-
-| Help name | What the page says it does | Tag |
+| Item | Value | Tag |
 | --- | --- | --- |
-| Skin smoothing | Finds a face and softens targeted areas, with a strength slider and region controls | static |
-| Eye Contact | Redirects gaze toward the lens. Single clear face. Needs a network connection and AI credits | static |
-| Center Active Speaker (beta) | Reframes toward whoever is talking. Needs video and audio on the same track | static |
-| Green Screen | Removes the background without a physical screen. Chroma Key is the separate effect when a real screen is present | static |
+| UI category | Special | decompiled |
+| Media flag | `beautifyRequested` | static-bundle |
+| Agent field | `skinSmoothing` boolean. `true` enables defaults. `false` disables. The agent schema does **not** expose the slider vector | static-bundle |
+| Credits | 5 AI credits **per file the first time** it is applied to that file | static-bundle agent copy |
+| Credit key | `skin_smoothing` → `ai_effects` | static-bundle |
+| HD six-pack | Not a member. Eye Contact, background blur/removal, portrait, uplight, and speaker focus have `com.descript.*` ids. Skin smoothing's binding in the minified map is `mo.WaC`. No `com.descript.skinSmoothing` string was recovered | static-bundle |
+| Cloud POST | Not one of `eye_gaze_correction`, `background_removal`, `face_tracking`, `lip_sync`, `speech_enhancement` | static-bundle absence |
 
-Polish Clips still treats **Eye Contact** as a research note, not a pipeline stage. This page does not change that. Skin smoothing is the appearance touch-up.
+Eye Contact is `com.descript.eyeContact` and `eyeContactRequested`. It is a different effect. See [eye-contact.md](eye-contact.md).
 
-## Behaviour (static, help text)
+## Parameter vector (decompiled module 351916)
 
-- Select the video layer, Effects, Skin smoothing.
-- Strength runs from low to high. A Regions control targets areas.
-- Also available from the Properties panel.
-- Help states it detects general facial location (forehead, eyes, jawline) so the blur lands in the right place, and that it does not use or store a faceprint.
-- Weaker on small faces, three or more people, hats, glasses, hands, coverings, turned heads, low light, and non-faces (illustrations, statues, pets).
+Ordered `defaultPreset`:
 
-Help does not publish the model, the resolution, or whether frames leave the machine. Those details are **unknown**.
+`[0.4, 3, 0.0212, Regions, 1, 0.3, 0.3, 2.5]`
 
-## API
+| Index | Control | Default |
+| --- | --- | --- |
+| 0 | Base strength | `0.4` |
+| 1 | Radius | `3` |
+| 2 | Edge feather | `0.0212` |
+| 3 | Mask area | `Regions` (the other value is `WholeFace`) |
+| 4 | Forehead multiplier | `1` |
+| 5 | Cheeks multiplier | `0.3` |
+| 6 | Laugh-lines multiplier | `0.3` |
+| 7 | Under-eyes multiplier | `2.5` |
 
-The staging OpenAPI 1.2 (2026-10-19) has no skin-smoothing, eye-contact, or framing operation and no example prompt for them (**static**). Agent edits are a free-text `prompt` on `POST /jobs/agent`. Help for the API says Underlord can do “anything else Underlord can do,” which does not name skin smoothing (**static** wording, **inferred** that a prompt might be tried and might no-op).
+The pack audit names this module's minified parameter-index symbols `EX` and `y0`. Those identifiers are not re-declared here, and the module source is not in git. Implementations use the index order in the table. The unit of edge feather `0.0212` is unlabeled in the summary; treating it as a fraction of the face box is **inferred**.
 
-AI credits are mentioned for Look Good tools as a group. A live probe would be required to see whether a skin-smoothing prompt spends credits or changes the project. Until then the API path is **unverified**.
+Region multipliers scale the base strength. `WholeFace` ignores the four multipliers and uses one mask. That split matches the two mask-area values (**decompiled** names, **inferred** blend rule).
 
-## What we will not copy
+## Credits and cache
 
-No effect implementation, no UI screenshot assets, no model weights. The local spec is [../pseudocode/skin-smoothing.md](../pseudocode/skin-smoothing.md).
+The agent sentence charges 5 AI credits per file on first apply. It does not say a later strength edit on the same file is charged again. Polish Clips charges once per source file when `beautifyRequested` first flips on, and does not charge for a parameter edit after that (**inferred** from "the first time").
+
+Help-page limitations (small faces, three or more people, hats, glasses, hands, coverings, turned heads, low light, non-faces) are **static-help** from the help center, not strings in module 351916. The bundle does not publish a faceprint claim. Do not store a face embedding.
+
+## Render
+
+Local soften on the face mask after the flag is set. No background-mask artifact is required. Pseudocode: [../pseudocode/skin-smoothing.md](../pseudocode/skin-smoothing.md).

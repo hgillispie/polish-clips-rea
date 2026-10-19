@@ -126,7 +126,7 @@ The inspector shows attribution on a stock clip and the duck-under-dialogue togg
 
 ## What this surface does not include
 
-A second monitor layout, comments, live collaboration, a Descript-shaped toolbar, or pixel measurements. Green screen, eye contact, and voice clone have no controls here.
+A second monitor layout, comments, live collaboration, a Descript-shaped toolbar, or pixel measurements. This MVP surface has no toggles for Green Screen, Eye Contact, or a voice clone. Those effects are specified for later: [../green-screen.md](../green-screen.md), [../eye-contact.md](../eye-contact.md), [../voice-consent.md](../voice-consent.md).
 
 ## Errors shown in the surface
 

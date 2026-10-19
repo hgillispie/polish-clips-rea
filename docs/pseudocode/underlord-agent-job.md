@@ -1,6 +1,9 @@
 # Underlord agent job
 
-Client for `POST /v1/jobs/agent` and the poll that follows. Shapes match the staging OpenAPI 1.2 snapshot (2026-10-19), summarized in [../api-notes.md](../api-notes.md). Base URL: `https://descriptapi.com/v1`.
+Two surfaces. They are not interchangeable.
+
+1. **Public API.** `POST /v1/jobs/agent` on `https://descriptapi.com/v1`. Shapes match the staging OpenAPI 1.2 snapshot (2026-10-19), summarized in [../api-notes.md](../api-notes.md). This is the client below.
+2. **Web client.** Chunk 88 of build `react19/9a29d61183bce669600a9dd9a1f8588d708becac` has kebab action ids and the skill `prepare-for-publish`. Eye Contact, the background mask, face tracking, lip-sync imputation, and Studio Sound POST to `https://api.descript.com/projects/{id}/...`, not to `/v1/jobs/agent`. Those payloads are in the effect specs. `descriptapi.com` does not appear in chunk 88 (**static-bundle**).
 
 ## Input / output
 
@@ -206,6 +209,74 @@ Compare `txt` to the pre-job transcript. Missing fillers mean a hard delete. Pre
 | `project_changed == false` | Job succeeded and edited nothing. Report `agent_response` |
 | Local timeout | Best-effort `DELETE`, then fail |
 
+## In-app action ids (static-bundle)
+
+Kebab enum in chunk 88 near offset ~1995267. The recovered slice starts at `RemoveRetakes`; earlier members are from the same enum via the symbol index. These are action names, not OpenAPI fields.
+
+| Enum | Wire id | Where it is specified |
+| --- | --- | --- |
+| `SuggestTitle` | `suggest-title` | [youtube-titles-descriptions.md](youtube-titles-descriptions.md) |
+| `ShowNotes` | `show-notes-v2` | same |
+| `YouTubeDescription` | `youtube-description-v2` | same |
+| `YouTubeThumbnail` | `youtube-thumbnail` | skill may offer it; not implemented |
+| `SocialPosts` | `social-posts` | same publish spec |
+| `Summarize` | `summarize-v2` | credit `summarize` → `ai_writing` |
+| `WriteScript` | `write-script` | credit `write_script` → `ai_writing` |
+| `Translate` | `translate` | out of the default build |
+| `GenerateImage` | `generate-image` | generative set |
+| `GenerateVideo` | `generate-video` | generative set. Not Video Regenerate |
+| `GenerateMusic` | `generate-music` | generative set |
+| `GenerateSfx` | `generate-sfx` | generative set |
+| `CenterActiveSpeaker` | `center-active-speaker` | [center-active-speaker.md](center-active-speaker.md) |
+| `CenterActiveSpeakerV2` | `center-active-speaker-v2` | same effect, v2 delta unknown |
+| `SmoothJumpCuts` | `smooth-jump-cuts` | credit `smooth_jump_cuts` → `ai_editing`. Not `lip_sync` |
+| `RemoveRetakes` | `remove-retakes-v2` | local retake ignore still owns the flag |
+| `EditImageInCanvas` | `edit-image-in-canvas` | not this pipeline |
+| `SmartZooms` | `smart-zooms` | credit `smart_zooms` → `ai_effects` |
+| `WindowDressing` | `window-dressing` | not specified |
+| `SegmentWithText` | `segment-with-text` | not specified |
+| `AnimateText` | `animate-text` | not specified |
+
+Also on the action inventory (**static-bundle**): `generate-eye-contact`, `generate-studio-sound`, `remove-filler-words`, `add-chapters`.
+
+`generate-video` is grouped with `generate-image`, `generate-music`, `generate-sfx`, and `youtube-thumbnail`. Video Regenerate is `lip_sync` variant `imputation` ([video-regenerate.md](video-regenerate.md)). Do not map one onto the other.
+
+Credit categories for the polish set:
+
+| Key | Category |
+| --- | --- |
+| `remove_filler_words` | `script_editing` |
+| `remove_retakes`, `smooth_jump_cuts`, `add_chapters` | `ai_editing` |
+| `studio_sound`, `eye_contact`, `green_screen`, `background_blur`, `skin_smoothing`, `center_active_speaker` | `ai_effects` |
+| `draft_a_title`, `draft_show_notes`, `draft_youtube_description`, `draft_social_post`, `summarize` | `ai_writing` |
+| `ai_regenerate_audio` | `ai_speech` |
+| `lip_sync`, `ai_regenerate_video`, `ai_gen_video` | `ai_media_generation` |
+
+A public agent prompt that says "do not change eye contact" is still the right instruction for `/v1/jobs/agent`, because that route has no eye-contact field and a prose request might otherwise hit the in-app action.
+
+## Skill `prepare-for-publish` (static-bundle)
+
+```text
+id:            prepare-for-publish
+name:          Prepare for publish
+isInvokable:   true
+isViewable:    true
+gate:          feature flag agent-first-party-macro-skills is true
+```
+
+The description says the result is titles, a YouTube description with chapters, platform social posts, and a thumbnail, and that this is text and images only. Steps the skill string requires, in our words:
+
+1. Ask platform and audience, then optionally tone. One question at a time.
+2. Draft several titles (`suggest-title`).
+3. Draft a YouTube description with chapters (`youtube-description-v2`). Over 10 minutes, the skill asks for spaced teaser timestamps and SEO hashtags.
+4. Draft social posts (`social-posts`).
+5. Offer a YouTube thumbnail (`youtube-thumbnail`) when YouTube is a destination.
+6. Offer to iterate. Do not export, render, publish, or change the edit unless the user explicitly asks.
+
+Implementation of 1–4 and the timestamp rule: [youtube-titles-descriptions.md](youtube-titles-descriptions.md). The skill body is not copied into source.
+
+Other skills refer to this id when they want a publish package with show notes.
+
 ## Build options
 
 | Option | Notes |
@@ -213,3 +284,5 @@ Compare `txt` to the pre-job transcript. Missing fillers mean a hard delete. Pre
 | This client inside the `descript_api` backend | One combined prompt per fixture, or three follow-ups sharing `conversation_id` |
 | `GET /agent/models` before submit | Optional. Pass `model` from `availableModels[].id` or an alias. Omit `model` to use `auto` |
 | Skip Underlord | Open stack performs filler, retake, enhance, captions, and cut with no token |
+| Kebab actions and `prepare-for-publish` | In-app ids. Not fields on `POST /v1/jobs/agent` |
+| Project AI routes on `api.descript.com` | Eye contact, mask, face tracking, lip sync, speech enhancement. See [../api-notes.md](../api-notes.md) |

@@ -2,6 +2,8 @@
 
 Mark filler words and set `ignored`. Leave the `Word` in the transcript so the operator can restore it. Playback and default captions skip ignored words via [transcript-model.md](transcript-model.md) `kept_ranges`.
 
+The web client's action id for this edit is `remove-filler-words`, credit key `remove_filler_words` → `script_editing` (**static-bundle**). That id is not a field on the public agent job. This file still sets `ignored` locally.
+
 ## Input / output
 
 ```text

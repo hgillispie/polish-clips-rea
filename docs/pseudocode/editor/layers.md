@@ -11,6 +11,7 @@ VisualLayer
   crop        Crop
   opacity     number          # 0..1, default 1; multiplies transform is separate
   blend       "normal" | "multiply" | "screen"
+  effects     VisualEffectNode[]  # ordered, index 0 closest to the source. Empty in the MVP. [../visual-effects-model.md](../visual-effects-model.md)
   text        TextOverlay | null
   shape       ShapeOverlay | null
   caption_style_id  string | null
@@ -46,10 +47,11 @@ A caption clip's layer kind is `caption`. Its glyphs come from `Clip.cues` and `
 ## Draw one layer
 
 ```text
-function draw_layer(frame, layer, source_bitmap, t):
+function draw_layer(frame, layer, source_bitmap, t, artifacts=[]):
   if layer.opacity <= 0:
     return frame
-  src = crop_bitmap(source_bitmap, layer.crop)
+  src = apply_visual_effects(source_bitmap, layer.effects or [], artifacts, t)
+  src = crop_bitmap(src, layer.crop)
   if src is empty:
     return frame
   w = src.width * layer.transform.scale_x
@@ -101,7 +103,7 @@ function composite_frame(composition, t, captions_visible) -> bitmap:
       if not clip_active(clip, t):
         continue
       layer = clip.layer or default_media_layer(clip)
-      frame = draw_layer(frame, layer, source_at(clip, t), t)
+      frame = draw_layer(frame, layer, source_at(clip, t), t, artifacts_for(clip))
   if captions_visible:
     for clip in caption_track.clips:
       if clip_active(clip, t):
@@ -118,6 +120,13 @@ function clip_active(clip, t) -> boolean:
     if skip.start_seconds <= t < skip.end_seconds:
       return false
   return true
+
+function artifacts_for(clip) -> object:
+  # Empty until a Look Good effect has run. See ../visual-effects-model.md.
+  if clip.media_id is null:
+    return {}
+  media = project.media.by_id(clip.media_id)
+  return media.artifacts or {}
 ```
 
 `source_at` for video seeks to the source clock. Time spent inside earlier skip ranges is not added back: the source clock equals `source_in + (t - clip.start) * speed` only when skips have **not** been rippled closed. After a ripple ([selection-and-edits.md](selection-and-edits.md)), skip ranges are gone and the following clips have moved earlier, so the mapping stays linear inside each clip.
@@ -131,6 +140,7 @@ function clip_active(clip, t) -> boolean:
 | Image, video, and GIF overlays | In scope with the editor. Placement, loop, and fades are [overlays.md](overlays.md). The polish seeder does not create them |
 | `shape` | Later. The type stays; the seeder does not create shapes |
 | `multiply` and `screen` | Later. Stored and painted as `normal` until a compositor implements them |
+| Non-empty `effects` | Later. Look Good nodes, Eye Contact, chroma, and color. Empty list draws as before |
 
 ## Errors
 
