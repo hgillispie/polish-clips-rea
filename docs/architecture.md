@@ -91,4 +91,6 @@ The local editor (tracks, layers, mixer, transcript-linked edits) is specified u
 - Cloning the Descript web UI.
 - Recovering native add-ons from the desktop app.
 - Credential capture or auth bypass.
-- Translate / dub, Rooms, Overdub voice clone, green screen, Brand Studio.
+- Translate / dub, Rooms, Brand Studio.
+- A voice clone without the consent gate in [pseudocode/voice-consent.md](pseudocode/voice-consent.md). Punch-in voiceover does not need that gate.
+- Video object removal as an MVP stage. The later spec is [pseudocode/object-removal.md](pseudocode/object-removal.md).

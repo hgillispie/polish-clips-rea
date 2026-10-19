@@ -19,8 +19,10 @@ In scope, in order:
 7. Editor foundation: composition, tracks, layers, mixer, transcript-linked edits, preview. Specs in [docs/pseudocode/editor/](docs/pseudocode/editor/).
 8. Caption burn-in into frames, optional on export.
 9. Publish / export, secondary.
+10. Editor additions, after the single-camera canvas: voiceover (punch-in), image/video/GIF overlays, optional stock search, self-record with a local matte, waveform alignment for two clips.
+11. Later AI, specified from public help and not from decompilation: skin smoothing, image object removal (video inpainting off by default), and a consented voice clone. Punch-in voiceover is the default way to replace a line.
 
-Eye contact is a research note only. It does not block the MVP. Translate, dub, green screen, Overdub, Rooms, Brand Studio, and collaboration stay later.
+Eye contact stays a research note. It is not skin smoothing. Translate, dub, Rooms, Brand Studio, and collaboration stay later. A voice that sounds like a person is out of the default build until [docs/pseudocode/voice-consent.md](docs/pseudocode/voice-consent.md) is satisfied.
 
 ## 2. What is already established
 
@@ -112,7 +114,9 @@ Behavioural specs with build options:
 - [docs/pseudocode/caption-burnin.md](docs/pseudocode/caption-burnin.md)
 - [docs/pseudocode/clip-cut.md](docs/pseudocode/clip-cut.md)
 - [docs/pseudocode/underlord-agent-job.md](docs/pseudocode/underlord-agent-job.md)
-- [docs/pseudocode/editor/](docs/pseudocode/editor/) — timeline, layers, mixer, edits, render, UI wires
+- [docs/pseudocode/editor/](docs/pseudocode/editor/) — timeline, layers, mixer, edits, render, UI wires, voiceover, overlays, stock providers, self-record, waveform align
+- [docs/descript-analysis/](docs/descript-analysis/) — public-help notes for skin smoothing, image object removal, and voice clone
+- [docs/pseudocode/skin-smoothing.md](docs/pseudocode/skin-smoothing.md), [object-removal.md](docs/pseudocode/object-removal.md), [voice-consent.md](docs/pseudocode/voice-consent.md)
 
 ### Phase 6 — build and verify (later PR)
 

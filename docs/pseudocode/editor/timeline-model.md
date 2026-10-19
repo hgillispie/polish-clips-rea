@@ -98,6 +98,10 @@ function scene_spans(timeline) -> Span[]:
 
 Scenes do not change playback. They are labels for the operator and for a later "export this scene" command.
 
+## Roles on an audio or video track
+
+`Track.role` is optional: `dialogue`, `voiceover`, `music`, or `multicam`. Absent means an ordinary track. Voiceover placement is [voiceover.md](voiceover.md). Overlay clips live on `kind = "overlay"` ([overlays.md](overlays.md)). A multicam group shares `Clip.multicam_group_id` ([audio-waveform-align.md](audio-waveform-align.md)).
+
 ## Invariants
 
 - Clip ids are unique inside the composition.

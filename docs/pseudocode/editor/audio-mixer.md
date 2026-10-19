@@ -147,7 +147,7 @@ function apply_ducking(speech_track_pcm, music_pcm, duck, sample_rate) -> music_
   return music_pcm
 ```
 
-Not called by `mix_interval` in the MVP. Stored `Ducking` values round-trip in `polish.project.v1`.
+`mix_interval` calls `apply_ducking` only for a voiceover track whose `duck_under_dialogue` flag is set ([voiceover.md](voiceover.md)). Arbitrary music ducking stays stored and bypassed. Stored `Ducking` values round-trip in `polish.project.v1`.
 
 ## Errors
 

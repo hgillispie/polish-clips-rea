@@ -38,15 +38,32 @@ The editor is specified under [pseudocode/editor/](pseudocode/editor/). It is th
 | Media transform, crop, opacity, caption layer | Required with the editor | [pseudocode/editor/layers.md](pseudocode/editor/layers.md) |
 | Offline render + optional burn-in | Required once export ships; burn-in stays optional per export | [pseudocode/editor/export-render.md](pseudocode/editor/export-render.md) |
 | Text overlays that reuse caption fonts | Later, types are in the layer spec | [pseudocode/editor/layers.md](pseudocode/editor/layers.md) |
-| Shapes, images, blend modes other than normal | Later | [pseudocode/editor/layers.md](pseudocode/editor/layers.md) |
-| Peak EQ bands, ducking | Later; stored and bypassed | [pseudocode/editor/audio-mixer.md](pseudocode/editor/audio-mixer.md) |
+| Shapes, blend modes other than normal | Later | [pseudocode/editor/layers.md](pseudocode/editor/layers.md) |
+| Image, video, and GIF overlays | Required with the editor | [pseudocode/editor/overlays.md](pseudocode/editor/overlays.md) |
+| Stock / GIF search providers | Interface now; live keys later | [pseudocode/editor/stock-asset-providers.md](pseudocode/editor/stock-asset-providers.md) |
+| Voiceover record, import, punch-in | Required with the editor | [pseudocode/editor/voiceover.md](pseudocode/editor/voiceover.md) |
+| Duck voiceover under dialogue | Optional flag. Other music ducking stays later | [pseudocode/editor/audio-mixer.md](pseudocode/editor/audio-mixer.md) |
+| Self-record with background removed | In scope after the overlay track. Not part of the polish-only pipeline | [pseudocode/editor/self-record-bg-remove.md](pseudocode/editor/self-record-bg-remove.md) |
+| Align two clips by waveform | In scope for multicam. Not part of the single-camera polish | [pseudocode/editor/audio-waveform-align.md](pseudocode/editor/audio-waveform-align.md) |
+| Peak EQ bands | Later; stored and bypassed | [pseudocode/editor/audio-mixer.md](pseudocode/editor/audio-mixer.md) |
 | Nested sequences, scene export, NLE XML | Later | [pseudocode/editor/timeline-model.md](pseudocode/editor/timeline-model.md) |
 
 A polish-only build can ship before the full editor: cues, style preview, and optional burn-in do not wait on shapes or ducking. The editor specs are still in scope for the product, not parked as out of scope.
 
+## AI features from public Descript docs
+
+Help pages fetched 2026-10-19. None of these are OpenAPI operations (static). Build specs are local and clean-room.
+
+| Topic | Descript’s name | When for Polish Clips | Docs |
+| --- | --- | --- | --- |
+| Appearance touch-up | Skin smoothing. Not Eye Contact | Later | [descript-analysis/skin-smoothing.md](descript-analysis/skin-smoothing.md), [pseudocode/skin-smoothing.md](pseudocode/skin-smoothing.md) |
+| Remove an object | Edit with AI, **image layers only**. Video inpainting is not in the help snapshot | Later. Video path is explicitly off by default | [descript-analysis/object-removal.md](descript-analysis/object-removal.md), [pseudocode/object-removal.md](pseudocode/object-removal.md) |
+| Voice that sounds like the speaker | Custom AI Speaker, then Regenerate. “Overdub” is the retired label | Later, and only with [pseudocode/voice-consent.md](pseudocode/voice-consent.md). Punch-in voiceover is the default fix | [descript-analysis/voice-clone.md](descript-analysis/voice-clone.md) |
+| Eye contact | Eye Contact effect | Research note. Still not a pipeline stage | Help summary in the skin-smoothing analysis |
+
 ## Later / out
 
-Translate / dub, green screen, Overdub and other voice clones, screen recording, Rooms, comments, Drive collaboration, Brand Studio, layout packs. `GET /search` and `POST /edit_in_descript/schema` exist (static) and are unused. Premiere / FCPXML interchange is later, beside NLE XML, and is not part of the MVP render.
+Translate / dub, Rooms, comments, Drive collaboration, Brand Studio, layout packs. A general green-screen effect on arbitrary footage is not a separate MVP; the self-record path has its own matte. `GET /search` and `POST /edit_in_descript/schema` exist (static) and are unused. Premiere / FCPXML interchange is later, beside NLE XML, and is not part of the MVP render.
 
 ## Fixtures
 

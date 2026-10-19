@@ -111,6 +111,19 @@ These actions must exist. The key bindings can match the platform. The actions c
 
 Delete clip is a timeline edit. It does not set `ignored` on the transcript. If the clip has a `transcript_link`, ask before deleting: "Remove this clip from the timeline" leaves the transcript flags as they are and drops the link.
 
+## Extra wires
+
+| Operator action | Call |
+| --- | --- |
+| Record voiceover at the playhead | [voiceover.md](voiceover.md) `record_voiceover` |
+| Punch in over a selected range | `punch_in` on the voiceover track |
+| Add image, video, or GIF | [overlays.md](overlays.md) `add_overlay` |
+| Search stock | [stock-asset-providers.md](stock-asset-providers.md). Hidden when no provider key is configured |
+| Record camera with background removed | [self-record-bg-remove.md](self-record-bg-remove.md) |
+| Align two clips | [audio-waveform-align.md](audio-waveform-align.md), then `switch_angle` |
+
+The inspector shows attribution on a stock clip and the duck-under-dialogue toggle on a voiceover track.
+
 ## What this surface does not include
 
 A second monitor layout, comments, live collaboration, a Descript-shaped toolbar, or pixel measurements. Green screen, eye contact, and voice clone have no controls here.

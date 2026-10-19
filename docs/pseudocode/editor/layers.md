@@ -128,7 +128,8 @@ function clip_active(clip, t) -> boolean:
 | --- | --- |
 | `media_video`, `caption`, transform, crop, opacity, blend `normal` | MVP |
 | `text` overlays that reuse `CaptionStyle` font fields | MVP, one text clip is enough |
-| `shape` and `image` | Later. Types are stable; `place_clip` may accept them and the renderer may draw them, but the polish seeder does not create them |
+| Image, video, and GIF overlays | In scope with the editor. Placement, loop, and fades are [overlays.md](overlays.md). The polish seeder does not create them |
+| `shape` | Later. The type stays; the seeder does not create shapes |
 | `multiply` and `screen` | Later. Stored and painted as `normal` until a compositor implements them |
 
 ## Errors
