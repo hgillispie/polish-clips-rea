@@ -1,0 +1,7 @@
+# Traffic captures and extracted app bundles can contain session tokens and
+# third-party code; keep them out of git.
+captures/
+extracted/
+*.har
+*.saz
+*.asar
