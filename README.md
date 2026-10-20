@@ -2,13 +2,13 @@
 
 Clean-room notes for **Polish Clips**: a transcript-first pipeline (import, word timings, filler ignore, retakes, enhance, captions, clip cut) and a local editor (timeline, layers, mixer). Caption font, color, position, and optional burn-in are local. The Descript OpenAPI has no caption-style schema. This repository is the spec. It is not a Descript clone, and it does not contain Descript source.
 
-Operators continue this work from **Grok Bot** with **REA** (`rea-agents` 6.7.0) already connected. The Claude Code / Claude Desktop / Cowork path is retired.
+Operators continue this work from **Grok Bot** with **REA** (`rea-agents` 6.7.0) already connected. 
 
 ## Clean-room rules
 
 - Write behaviour, data shapes, and pseudocode. Do not paste Descript source, minified bundles, decompiled JavaScript, Wakaru modules, or recovered assets.
 - Tag claims **static** (OpenAPI or a file in this repo), **observed** (seen while something ran), **inferred** (a conclusion from those), **decompiled** (a Wakaru-recovered module), **static-bundle** (a string or slice of the public JS), or **static-help** (help copy).
-- Hunter authorized clean-room notes from the public `web.descript.com` bundles (build `react19/9a29d61183bce669600a9dd9a1f8588d708becac`, 2026-10-19). That is not a blocker for this workstream. It is not permission to commit those bundles or to bypass a login.
+
 - Use only an account and media you own. Do not bypass paywalls, credits, or rate limits, and do not extract other people's data or server-side prompts.
 - Keep captures out of git. `.gitignore` excludes `captures/`, `*.har`, `*.saz`, `*.asar`, `.env`, and credential files. Redact bearer tokens before sharing a HAR.
 
