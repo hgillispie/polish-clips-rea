@@ -1,7 +1,7 @@
 # Editor overview
 
 Evidence: **static-bundle** (routes, SDK methods), **decompiled** (flow write schema,
-flow hooks), **inferred** where marked.
+flow hooks), **observed-network** (signed-in HAR, arcade-analysis/observed-network.md), **inferred** where marked.
 
 ## Surfaces
 
@@ -20,7 +20,17 @@ flow hooks), **inferred** where marked.
 ## Save model
 
 - Optimistic local state; writes go through `PATCH /api/flows/{id} {set, unset}` with the
-  whole `steps` array when any step changes (inferred from schema: `steps` is replaced wholesale).
+  whole `steps` array when any step changes. **observed-network**: 14 PATCHes in the
+  session. Each one carried `set.steps` (the full array) and sometimes `set.aspectRatio`,
+  with `unset: []`, and returned `{modified}`.
+- Upload-image step (observed-network): bytes go straight to Firebase Storage
+  (`{uid}/{imageId}.png`). The client computes blurhash and size, writes `images/{id}`
+  through the Firestore SDK, then PATCHes the flow with a `type:1` step whose
+  `assetId = imageId`.
+- Initial page data comes from `__NEXT_DATA__` (`_serializablePrivateFlow`,
+  `_serializableTranslations`, `flowMode:"EDIT"`, `canAccessPrivateFlow`, SWR
+  `fallback` for `/api/flows/{id}/access`). After that a Firestore listener keeps it live.
+- The share/embed/export dialogs make no network calls when opened (observed-network).
 - Live Firestore listener refreshes the doc (multi-tab, AI job results land this way:
   `awaitFirestoreDocCondition("flows", id, predicate)` polls until e.g. `autoSplit.status` reaches a state).
 - Undo/redo history in the client; external updates (AI results) are captured into

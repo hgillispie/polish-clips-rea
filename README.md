@@ -34,6 +34,9 @@ Claude Code / other implementers: read [CLAUDE.md](CLAUDE.md).
   - **decompiled**: read from a Wakaru-unpacked module of the CRX or web/player bundle.
   - **static-bundle**: a string, enum or call shape read from the raw public JS.
   - **observed**: seen in a public response (public share JSON, embed payload, loader).
+  - **observed-network**: seen in a signed-in HAR of our own Free workspace. Only type
+    shapes and non-identifying enum literals are written down. HARs never leave the REA box.
+  - **static-binary**: symbol, type and string names in a native binary we could not decompile (desktop agent).
   - **static-help**: Arcade help center / pricing / marketing copy.
   - **inferred**: our conclusion from the above.
 - Use only public pages and our own account. Do not bypass paywalls, credits, or auth; do not extract other people's data or server-side prompts.
@@ -47,9 +50,10 @@ Claude Code / other implementers: read [CLAUDE.md](CLAUDE.md).
 | [ARCADE_RE_PLAN.md](ARCADE_RE_PLAN.md) | RE plan: sources, method, status per area, next passes. |
 | [docs/architecture.md](docs/architecture.md) | Hosts, components, data flow from capture to share. |
 | [docs/feature-inventory.md](docs/feature-inventory.md) | Every feature, where it lives, plan gate, evidence, build priority. |
-| [docs/api-notes.md](docs/api-notes.md) | Backend routes (method, path, payload) recovered from the extension and web bundles. |
+| [docs/api-notes.md](docs/api-notes.md) | Backend routes (method, path, payload) from the extensions, desktop app, web bundles and a signed-in HAR. |
 | [docs/evidence-index.md](docs/evidence-index.md) | Which local artifact backs which doc, REA evidence ids, hashes. |
-| [docs/arcade-analysis/](docs/arcade-analysis/) | Bundle notes: extension manifest, build/hosts, plans and gating, enums. |
+| [docs/arcade-analysis/](docs/arcade-analysis/) | Extension, desktop app, AI-video extension, observed network, build/hosts, plans and gating. |
+| [tools/har-shapes/](tools/har-shapes/) | Script that turns local HARs into type-only route/Firestore shapes. |
 | [docs/pseudocode/](docs/pseudocode/) | Implementable specs (capture, model, player, editor). |
 | [docs/schemas/flow.schema.json](docs/schemas/flow.schema.json) | Our JSON Schema for the Flow document (derived, not copied). |
 

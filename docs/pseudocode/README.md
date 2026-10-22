@@ -1,7 +1,7 @@
 # Pseudocode index
 
 Implementable specs for an Arcade-style interactive demo builder. Every file states its
-evidence (decompiled / static-bundle / observed / static-help / inferred). Pseudocode is
+evidence (decompiled / static-bundle / observed / observed-network / static-help / inferred). Pseudocode is
 ours: it describes behaviour, not Arcade's code.
 
 - [capture/](capture/) — Chrome extension recording, click capture, coordinates, video, HTML, upload, step builder.

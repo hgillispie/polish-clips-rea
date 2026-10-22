@@ -26,8 +26,8 @@ the CRX is committed. Tag: **decompiled** unless noted.
 | background (service worker) | Recording state machine, screenshot loop, tabCapture stream id, uploads, API calls, opening the editor tab, keyboard commands, badge counter. |
 | recording-manager (content, all frames) | Event listeners, click context (selector, text, element type, headings, element rect), frame geometry, countdown overlay, HTML snapshot, keep-alive pings, relays recorded data to the app page. |
 | offscreen | `getUserMedia` on the tab stream, mic mixing, `MediaRecorder`, ffmpeg remux, IndexedDB save, blurhash/aspect analysis of images, JSON→blob URL. |
-| popup | Buttons "Record with Avery" (Demo), "Record video", "Screenshot"; camera picker ("No Camera"), "System Audio", "Change size" (window size), "Log in to record", "Recording is not available on this page", media-permission prompt, Settings link, embed-diagnostics report view. (static-bundle UI strings) |
-| page-editor | In-page text editing of the live page before capture ("edit page" command): "Edit mode", per-element "Original text was …", "Edit History", Save/Cancel; edits saved via `arcade-save-html-edits`. (static-bundle UI strings + decompiled message name) |
+| popup | Record (Demo), Record video, Screenshot, camera/mic/tab-audio pickers, window size, AI toggle, embed diagnostics. See "Popup logic" below (decompiled, pass 2). |
+| page-editor | In-page editing of the live page before capture. See "Page editor logic" below (decompiled, pass 2). |
 | embed-diagnostics | Injected into a customer page to find why an embed is blocked (CSP `frame-src` etc.). |
 
 ## Message vocabularies (names are the protocol; values are strings)
@@ -60,9 +60,60 @@ the CRX is committed. Tag: **decompiled** unless noted.
 Server-controlled gates read from storage: `mayUseDirectUpload`,
 `mayUseTypoCorrection`, `mayNotRecord`.
 
-## Second extension (AI video recorder) — gap
+## Popup logic (decompiled, pass 2)
 
-Id `plbpmcliejllllhnalcbmggjkchokpbg`, v1.0.26. Uses `sidePanel` and `debugger`
-permissions, has producer-recorder, camera-bubble and cursor-tracker scripts.
-Unpacked and Wakaru'd locally but **not analysed**. It belongs to the AI-video
-product, which is out of scope for the demo builder v1.
+```
+on open:
+  read chrome.storage.local {user, plan, loggedInAs, mayUsePageEditor, mayUseDomCapture,
+       mayUseAutoLink, mayUseDirectUpload, mayUseTypoCorrection, mayNotRecord}
+  loginStatus: unknown → (stored user) logged_in
+             | (host permission for the app origin missing) insufficient_permissions
+             | POST /api/extension-cookie-login {chromeExtensionVersion} (same-origin cookie)
+                  → {user,…}: logged_in, send SetUser to background, persist user
+             | else logged_out ("Log in to record")
+  a different user id from the app replaces the stored user
+  isPageRestricted = URL not http(s) or Chrome Web Store → record buttons disabled,
+                     "Recording is not available on this page"
+  mayNotRecord → Record disabled, "You do not have permission to record…"
+buttons → message background {name: StartRecordingDemo | StartRecordingVideo | TakeScreenshot, tabId}
+          then window.close()
+devices: enumerateDevices → camera list, microphone list (labels without "(…)" suffix);
+         camera/mic permission is asked in a helper page (CameraStatusResponse,
+         MicrophonePermissionGranted); tab audio toggle is stored as tabAudioEnabled
+settings toggles write user settings (useAvery, captureHTML, tone, …; table below)
+window size: shows the current window width against a chosen preset (system.display)
+embed diagnostics: ReloadAndScanForEmbeds → list of issues {type, severity: error|warning, …}
+```
+
+## Page editor logic (decompiled, pass 2)
+
+- Started by the "edit page" command or popup. It mounts a shadow-DOM panel and an
+  overlay, and turns off page spellcheck while editing.
+- **Modes**: `edit` (text) | `replace` | `remove` | `hide` | image replace (click an
+  `<img>`, choose a file; it is read as a data URL).
+- **Text editing**: each edited text node is wrapped in a custom element
+  `<arcade-editable data-edit-id data-initial-value>` and made contentEditable.
+  If the live text no longer matches the recorded `previousContent`, the edit records
+  `actualPreviousContent`.
+- **Edit record**: `{id (random base36), createdAt ISO, pageUrl, type: replace|remove|hide|image|<text>,
+  cssPath, childNodeIndex, previousContent, newContent}`. `cssPath` is `//*[@id="…"]`
+  when the element has an id, otherwise a positional path. Paths starting with `/` are
+  resolved with XPath, the rest with `querySelector`.
+- **Persistence**: `localStorage["arcade-page-editor-edits"]` per origin, plus an
+  `arcade-page-editor-state` key. A `MutationObserver` re-applies the edits for the
+  current URL when nodes are added or the SPA route changes, so edits survive
+  re-renders during capture.
+- **Undo/redo**: Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z; each edit has an inverse.
+- **Frame protocol** (`window.postMessage`, used when the page is inside the Arcade
+  HTML editor iframe): `ArcadeRequestHtml` → `ArcadeResponseHtml {html: doctype +
+  outerHTML with form values baked into attributes, edits}`, `ArcadeChangeEditMode {mode}`,
+  `ArcadeRegisteredChange {edits}`, `ArcadeUndoEdit/RedoEdit`, `ArcadeUndo/RedoShortcutEdit`,
+  `ArcadeHtmlResetScroll`, `ArcadeInitHtmlReplaceMessage {html, cssPath, childNodeIndex, pageUrl}`,
+  `ArcadeRequestHtmlFromIframe` / `ArcadeSendHtmlFromIframe`.
+- Inside the Arcade-hosted HTML capture page (`*.html` with `arcade-html`), storage is
+  disabled and edits go only to the parent editor. On a live page, the background
+  message `arcade-save-html-edits` triggers save.
+
+## Second extension (AI video recorder)
+
+Analysed in pass 2: [ai-video-extension.md](ai-video-extension.md).

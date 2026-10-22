@@ -16,8 +16,8 @@ Evidence tags: **decompiled** (Wakaru module), **static-bundle** (raw JS string)
 | Object storage | Signed PUT URLs issued by `/api/extension/upload-url` and `/api/upload*`. | decompiled |
 | Analytics ingest | Segment-compatible endpoint on a first-party host (`t.<domain>/api/ingest`), PostHog-style `/ingest`. | static-bundle |
 | Chrome extension "interactive demo" (MV3, v1.9.33) | Capture. See [arcade-analysis/extension.md](arcade-analysis/extension.md). | decompiled |
-| Chrome extension "AI video" (v1.0.26) | Side-panel recorder with camera bubble and cursor tracker. Not analysed in depth. | static-bundle (manifest only) |
-| Desktop app | Exists (native-messaging host `com.arcade.desktop`, `/desktop/download`, `/upload/desktop/[uploadInfo]`, macOS-style mouse/keyboard events). **Not downloaded.** Only its upload format is known from the web step builder. | static-bundle, decompiled (web side) |
+| Chrome extension "AI video" (v1.0.26) | Side-panel "Producer": CDP-screencast tab recorder with cursor samples, camera bubble, in-browser MP4 with smart zoom; chat → brief → video wizard via `/api/producer/*`. See arcade-analysis/ai-video-extension.md. | decompiled |
+| Desktop app (3.5.21, Electron + Swift `arcade-agent`) | Records screen/area/window/USB device; per-click screenshots + video; device-flow auth; uploads via `/api/upload/*`, then hands a localhost folder to the web builder (`/upload/{id}/desktop/{payload}`). See arcade-analysis/desktop-app.md. | decompiled (agent: static-binary) |
 
 Third parties seen: Sentry, Segment, PostHog, HubSpot, Liveblocks (comments),
 ElevenLabs + Google TTS (synthetic voice), Clearbit (Audience Reveal),
@@ -75,12 +75,29 @@ Mux (video), Firebase Auth (ID tokens on `fetchWithToken`). (static-bundle)
 
 Storage choice for v1 (inferred, ours): Postgres JSONB for the Flow document
 (the Flow is always read/written whole) + S3-compatible object storage + a
-video host (Mux or self-hosted HLS). Firestore is what Arcade uses; we do not
-need its live listeners for v1.
+video host (Mux or self-hosted HLS). Firestore is what Arcade uses, and its editor and dashboard rely on live listeners
+(observed-network). We do not need them for v1; SSE/WebSocket on save is enough for
+multi-tab freshness.
 
-## 4. Auth model (static-bundle, inferred)
+## 4. Auth model (decompiled, observed-network)
 
-- App calls use a Firebase ID token: `fetchWithToken(idToken, method, path, body)` sends `Authorization: <token>`.
-- The extension calls `/api/extension/*` with cookies (`withCredentials: true`); the app passes the signed-in user to the extension via `chrome.runtime.sendMessage(extId, {name:"UserFromApp", user})` (`externally_connectable` for `*.arcade.software`).
-- Desktop app auth uses a device flow: `/auth/desktop/[authId]` page → `POST /api/auth/desktop/{authId}/authorize`.
-- Viewer endpoints (`/api/viewer/form`, share JSON, embed payload) are unauthenticated.
+- Identity is Firebase Auth. The browser keeps a Firebase session (`identitytoolkit
+  accounts:lookup {idToken}`, `securetoken /v1/token` refresh; observed-network).
+- App REST calls use `fetchWithToken(idToken, method, path, body)`, which sends
+  `Authorization: <Firebase ID token>` (decompiled). They also send
+  `x-arcade-workspace-id` and `x-arcade-team-id` on every `/api/*` call
+  (observed-network; Chrome strips the auth header from HAR exports).
+- Most reads skip REST and use Firestore realtime listeners under Firestore security
+  rules: user, workspace, team, members, flows, translations, credits, brand kits
+  (observed-network).
+- Extension: the popup calls `/api/extension-cookie-login` with the app cookie, and
+  `/api/extension/*` uses cookies (`withCredentials: true`). The app also pushes the user
+  to the extension via `chrome.runtime.sendMessage(extId, {name:"UserFromApp", user})`
+  (`externally_connectable` for `*.arcade.software`) (decompiled). The AI-video extension
+  uses `fetch(..., {credentials:"include"})` (decompiled).
+- Desktop: device-style flow. `POST /api/auth/desktop` returns `authId`. The app opens the
+  browser at `/auth/desktop/{authId}`, the web page calls `…/{authId}/authorize`, and the
+  app polls `/api/auth/desktop/{authId}` until `authenticated` (or `expired` /
+  `claimed-by-other-client`). The token is stored with Electron `safeStorage` (decompiled,
+  desktop-app.md).
+- Viewer endpoints (`/api/viewer/form`, share JSON, embed payload, `/api/flows/public-data`) are unauthenticated.

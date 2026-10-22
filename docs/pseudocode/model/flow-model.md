@@ -108,5 +108,27 @@ backgroundMusicUrl null, backgroundMusicVolume DEFAULT
   Firestore 1 MiB limit → keep screenshots out of the doc, URLs only).
 - Bulk ops take `flowIDs` (1..30): set-status, set-unlocked, tag/untag, request-approval, approve.
 
+## Observed in a signed-in session (observed-network)
+
+See arcade-analysis/observed-network.md §3–4. Key confirmations and corrections:
+- Reads use a **Firestore realtime listener** on `flows/{id}`. There is no REST GET.
+  Writes use REST `PATCH {set, unset}`, and every edit sends the whole `steps` array. The
+  response is `{modified}`.
+- Create body = presentation defaults with `steps: []`, `schemaVersion:"1.1.0"`,
+  `createdWith:"arcade-web"`, `font:"Inter"`, `flowWrapper:1`, `customCursor:1`,
+  `showFlowNavIndicator:"AUTO"`, `sharePageLayout.type:"default"`. The response is `{id}` (201).
+- A new flow has `status` 1. Publish = `POST /api/flows/set-status {flowIDs, status:2}`,
+  then `GET /api/revalidate?id&variant` refreshes the share page.
+- The stored doc has ~19 fields the pass-1 table lacked (`ai`, `experiments`,
+  `experimentsConfig`, `hasComments`, `hasUsedAI`, `processedAI(Reason)`, `clipsReqId`,
+  `clipsRequested`, `usedUploadInChunks`, `rrwebEventsUrls`, `claimToken`,
+  `urlToDemoKind`, `themeIdMismatchConfirmed`, `firstViewed`, `lastModifiedBy`, …). They
+  are now in flow.schema.json. The schema validates the 4 observed private snapshots and
+  the 3 public-data flows with zero errors.
+- `titleSource`, `captionsVisible`, `capturedEvents` and `videoTimestampWindows` are absent
+  on a web-created flow. Only capture/AI paths write them.
+- Dates: Firestore timestamp ↔ SSR `{"__arcadeIsoDate": iso}` ↔ REST ISO string.
+- Subcollections observed: `flows/{id}/translations/{lang}`, `flows/{id}/stepGenerations`.
+
 Our build: keep this shape; store as JSONB; enforce a size cap; reject data: URLs in
 saved docs (the capture builder emits data: URLs only before upload).

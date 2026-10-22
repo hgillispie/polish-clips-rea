@@ -15,7 +15,7 @@ Priority is ours: **P0** MVP, **P1** next, **P2** later, **—** out of scope.
 | Capture | Page editor (edit live text before capture) | flag Page Editor | static-bundle | arcade-analysis/extension.md | P2 |
 | Capture | Selective click capture (CapsLock), pause/resume, cancel, shortcuts | Free | decompiled | capture/click-and-event-capture.md | P0 |
 | Capture | Typo correction in typing clips | server flag | decompiled | capture/click-and-event-capture.md | P2 |
-| Capture | Desktop app capture | Free | static-bundle; binary not analysed | capture/desktop-capture.md | — |
+| Capture | Desktop app capture | Free | decompiled (Electron main/renderers); agent static-binary | capture/desktop-capture.md, arcade-analysis/desktop-app.md | — |
 | Capture | Upload video/images → demo; Figma import | Free | static-bundle (routes) | editor/overview.md | P1 / — |
 | Editor | Hotspots (pulsating/area), callouts (arrow/no arrow, shape), colours | Free | decompiled, observed | model/hotspots-and-callouts.md | P0 |
 | Editor | Overlays: chapter / start / final, buttons | Free | decompiled, observed | model/overlays-branching-forms.md | P0 |

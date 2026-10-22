@@ -24,3 +24,5 @@ recovered/
 *.zip
 *.wasm
 *.map
+har/
+har-analysis/

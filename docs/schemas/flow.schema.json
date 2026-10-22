@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/hgillispie/polish-clips-rea/docs/schemas/flow.schema.json",
   "title": "Flow (interactive demo document)",
-  "description": "Our clean-room schema for an Arcade-style interactive demo. Derived from field names/defaults documented in docs/pseudocode/model/*.md (evidence: decompiled + observed). Not copied from Arcade source.",
+  "description": "Our clean-room schema for an Arcade-style interactive demo. Derived from field names/defaults documented in docs/pseudocode/model/*.md (evidence: decompiled + observed). Not copied from Arcade source. Pass 2: reconciled against signed-in Firestore/SSR/REST flow documents (evidence: observed-network, docs/arcade-analysis/observed-network.md).",
   "type": "object",
   "required": [
     "id",
@@ -24,11 +24,13 @@
     },
     "created": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "ISO-8601 in REST and public-data. Firestore stores a timestamp and SSR props wrap it as {\"__arcadeIsoDate\": iso} (observed-network). Our schema uses the ISO string."
     },
     "modified": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "ISO-8601 in REST and public-data. Firestore stores a timestamp and SSR props wrap it as {\"__arcadeIsoDate\": iso} (observed-network). Our schema uses the ISO string."
     },
     "editors": {
       "type": "array",
@@ -58,7 +60,7 @@
         6,
         7
       ],
-      "description": "draft 1, published 2, archived 3, deleted 4, recording 5, error 6, pending 7"
+      "description": "draft 1, published 2, archived 3, deleted 4, recording 5, error 6, pending 7 Observed: new flow 1, then POST /api/flows/set-status {status:2} on publish (observed-network)."
     },
     "publishedDate": {
       "type": "string",
@@ -72,7 +74,8 @@
         "default",
         "ai",
         "user"
-      ]
+      ],
+      "description": "Not present on a web-created flow (observed-network); written by extension capture/AI paths (decompiled)."
     },
     "externalName": {
       "type": [
@@ -106,7 +109,8 @@
       "type": "array",
       "items": {
         "type": "object"
-      }
+      },
+      "description": "Not present on a web-created flow (observed-network); written by extension capture/AI paths (decompiled)."
     },
     "videoTimestampWindows": {
       "type": "array",
@@ -117,7 +121,8 @@
         },
         "minItems": 2,
         "maxItems": 2
-      }
+      },
+      "description": "Not present on a web-created flow (observed-network); written by extension capture/AI paths (decompiled)."
     },
     "customVariables": {
       "type": [
@@ -261,7 +266,8 @@
       "type": "boolean"
     },
     "captionsVisible": {
-      "type": "boolean"
+      "type": "boolean",
+      "description": "Not present on a web-created flow (observed-network); written by extension capture/AI paths (decompiled)."
     },
     "showCopyLink": {
       "type": "boolean"
@@ -444,6 +450,100 @@
         "custom",
         null
       ]
+    },
+    "lastModifiedBy": {
+      "type": "string"
+    },
+    "submittedForSpotlight": {
+      "type": "boolean",
+      "description": "Community showcase submission (observed-network)."
+    },
+    "firstViewed": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "First external view time; null until viewed (observed-network)."
+    },
+    "unlocked": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Free-plan single-published-flow gate. A Firestore listener filters on it (observed-network)."
+    },
+    "experiments": {
+      "type": "array",
+      "description": "A/B experiments on the demo (observed-network; item shape not observed)."
+    },
+    "experimentsConfig": {
+      "type": "object"
+    },
+    "hasComments": {
+      "type": "boolean"
+    },
+    "hasUsedAI": {
+      "type": "boolean"
+    },
+    "processedAI": {
+      "type": "boolean",
+      "description": "Server AI pass finished (record-with-AI)."
+    },
+    "processedAIReason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "ai": {
+      "type": "object",
+      "description": "AI job state bag (observed empty)."
+    },
+    "clipsReqId": {
+      "type": "string"
+    },
+    "clipsRequested": {
+      "type": "object"
+    },
+    "approvalRequestedBy": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "themeIdMismatchConfirmed": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "usedUploadInChunks": {
+      "type": "boolean",
+      "description": "Extension chunked upload was used (matches demo-start uploadInChunks)."
+    },
+    "rrwebEventsUrls": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "description": "rrweb session recordings for HTML capture (observed null)."
+    },
+    "claimToken": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Anonymous-create claim token (observed null). Never expose."
+    },
+    "urlToDemoKind": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URL-to-demo generation kind (observed null)."
     }
   },
   "$defs": {
@@ -770,7 +870,7 @@
         },
         "variant": {
           "type": "string",
-          "description": "form inputs: text | email | single-select | multi-select | hidden | \u2026"
+          "description": "form inputs: text | email | single-select | multi-select | hidden | …"
         }
       }
     },
@@ -849,6 +949,10 @@
         },
         "skipped": {
           "type": "boolean"
+        },
+        "isMobileRecording": {
+          "type": "boolean",
+          "description": "Set false on uploaded image steps (observed-network)."
         }
       }
     },

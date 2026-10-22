@@ -12,7 +12,7 @@
 AI-video product is a separate subscription (Free / Pro $49–59 / Enterprise) with its
 own credits per generated video. Out of scope for the demo builder.
 
-## How gating is implemented (decompiled / observed)
+## How gating is implemented (decompiled / observed / observed-network)
 
 1. **Feature map per workspace** — the share payload carries `features: { "<Feature Name>": bool|number }`
    (109 keys on a sampled flow). The UI checks names like "Pan and Zoom", "FlowForm",
@@ -29,6 +29,32 @@ own credits per generated video. Out of scope for the demo builder.
    VoiceModelSelection, Analytics30, AiModelProvider, ImagesInCallouts, VideoProduct, WebComponentEmbeds…
 5. **Credits** — AI calls return HTTP 402 when out of credits; billing summary and
    credit-usage endpoints back the UI.
+
+## Observed in a Free workspace (observed-network)
+
+- `workspaces/{id}.freePlanType = "singleFlow"` and `subscriptions: []`. Billing page props:
+  `currPlan:"Free"`, `interval:""`, `currInvoiceTotal:""`, `aiCredits{availableCredits:250, totalCredits:250}`,
+  `_totalNumberOfCredits:250`.
+- Price table served to the billing page (USD): `proMonthly 38`, `proAnnual 388`,
+  `growthMonthly 50`, `growthAnnual 510`, legacy growth five-seat `{basePrice 350,
+  unitAmount 150, unitAmountStartsAt 6}` monthly / `{3570, 1530, 6}` annual,
+  `aiCreditsPack 0.12`.
+- **Metering in action**: on Free, using the image editor, step pan-and-zoom and AI
+  translation each fired `Paywall Displayed {paywallSource: "metering-image-editor" |
+  "metering-pan-and-zoom" | "metering-translations"}`. "Paywall continue clicked" then let
+  the action proceed. The client wrote `users/{uid}.meteringUsage.panAndZoom` with a
+  Firestore update and a server-timestamp `modified`. Collections showed
+  `paywallSource:"Collection"` (hard paywall on Free).
+- The plan limit for published demos uses a listener on `flows` where
+  `status, teamId, unlocked` (`unlocked` marks the flow allowed under `singleFlow`).
+- Workspace `features` on Free has 4 keys only (`Disable IP Tracking`, `Workspace
+  Auto-Join`, `Publish Events to Host`, `Do Not Track`), and team `features` is `{}`. The
+  109-key map in share payloads is therefore the *resolved* entitlement set, computed
+  server-side from plan + overrides (inferred from the difference).
+- Rollout/experiment flags come from PostHog (`t.arcade.show/ingest/flags/`, 43 keys),
+  e.g. `limited-free-plan-vs-the-old-plan`, `metering-features`, `growth-trial-vs-metering`,
+  `annual-pricing-first`, `pro-experiment-50-off`, `unlimited-brand-kits`. Pages get a
+  per-page subset as `_featureFlags`.
 
 For our build: a single `entitlements(workspace)` function returning the same kinds of
 answers (bool features + numeric limits + counters), checked server-side on every write

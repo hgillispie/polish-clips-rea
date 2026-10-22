@@ -34,6 +34,10 @@ background measured and what the page reported.
 
 ## Rendering (player)
 
-`left = x * stageWidth - hotspotWidth/2`, `top = y * stageHeight - hotspotHeight/2`
-(inferred from usage; the player keeps a 10 px edge buffer, `HOTSPOT_EDGE_BUFFER`,
-when placing callouts).
+`left = x * stageWidth - hotspotWidth/2`, `top = y * stageHeight - hotspotHeight/2`.
+This is **decompiled** (pass 2) from the shared web helper `getElementStagePosition`.
+If x or y is outside 0..1, or the stage has zero size, the element is parked
+off-screen (−999999) instead of drawn. Editor drags are clamped to a 10 px inset from
+every stage edge (`getPositionAndBounds`), matching the player's
+`HOTSPOT_EDGE_BUFFER = 10`. Hotspot `width`/`height` are pixels and `x`/`y` are
+fractions (observed-network: PATCH bodies).

@@ -1,7 +1,8 @@
 # Viewer analytics
 
 Evidence: **decompiled** (tracker class + call sites in the standalone runtime; host
-event publisher in share page bundle), **static-bundle** (ingest URL).
+event publisher in share page bundle), **static-bundle** (ingest URL), **observed-network**
+(signed-in HAR; see arcade-analysis/observed-network.md §6).
 
 ## Transport
 
@@ -65,8 +66,23 @@ Routes: `/api/insights/aggregated/{flowId}`, `/api/insights/overviewPlays/{flowI
 `/api/insights/companiesForLeads/{flowId}`, workspace insights page, "Export All Insights",
 "Analytics 3.0". Per-step drop-off and branch tracking are Growth (static-help). Leads:
 `/api/leads/subscribe|unsubscribe` (email digests), Audience Reveal via Clearbit
-(`/api/clearbit/toggle`) resolves viewer IP → company. Response shapes **not recovered**
-(login-walled).
+(`/api/clearbit/toggle`) resolves viewer IP → company. Response shapes **not recovered**.
+
+Observed-network (Free workspace, unpublished→published demo with no real views): the
+team and flow insights pages loaded with **no** `/api/insights/*` request and no
+insights Firestore listener, and showed sample data. On this plan/state the sample
+dataset is client-side. Page props are `{teamId, timezone}` (team) and
+`{flowSSR, timezone, _serializableTranslations, …}` (flow). Real response shapes still
+need a demo with views or a Growth trial.
+
+Ingest transport confirmed (observed-network): `POST t.arcade.show/api/ingest/{t,p,i}`,
+`text/plain` JSON from analytics.js. Each is a single event, not a batch. Envelope
+`{type, event|name, properties, context{page{path, referrer, search, title, url},
+userAgent, userAgentData, locale, library, timezone}, messageId, anonymousId, userId,
+timestamp, sentAt, _metadata}`. Viewer `Step Reached` properties observed:
+`flowId, flowName, flowGroup, sessionId, stepId, fromStepId, isInitialStep, isFinalStep,
+fromStepActiveTimeMs, totalActiveTimeMs, pageWidth, pageHeight, customLinkId,
+hasCustomValues, language, flowHasTranslation, productExperience`.
 
 Our build: implement our own ingest (`POST /api/events` batch) with the same event names
 so dashboards and host integrations are compatible in spirit; compute insights by

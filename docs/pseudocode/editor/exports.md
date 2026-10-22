@@ -23,5 +23,12 @@ POST /api/flows/{id}/export {
   export fails (`meteringUsageRolledBackAt`). Plan-limit keys include `exportToGIF`, `exportToVideo`, `trimVideo`, `splitVideo`.
 - Presets UI: by type the resolution list and fps list differ (`TYPE_RES`, `TYPE_FPS`).
 
+Observed-network: opening the export dialog in the editor made **no** request, and no
+export was started, so the job lifecycle is still decompiled-only. The flow doc carries
+`gifUrl:""` and `videoUrl:""` placeholders. The only `exports` listener seen was
+`promptVideoGenerations/{id}/exports` ordered by `requestedAt` (AI-video product). This
+suggests demo exports also live in an `exports` subcollection of the parent doc
+(inferred).
+
 Our build: render with a headless browser driving our own player in "export mode"
 (deterministic clock) + ffmpeg (palettegen/paletteuse for GIF), or Remotion.
