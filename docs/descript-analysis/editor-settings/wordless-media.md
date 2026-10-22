@@ -1,5 +1,7 @@
 # Show wordless media in script (Beta)
 
+> **Signed-in result (2026-10-22):** the project stored `wordlessMediaEllipses: false` explicitly at creation, and both wordless flags were at their defaults. The font file is still not located. Details: [signed-in-gaps.md](signed-in-gaps.md).
+
 ## Keys and defaults (decompiled)
 
 | Layer | Key | Default |

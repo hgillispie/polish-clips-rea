@@ -1,5 +1,7 @@
 # Underlord agent protocol
 
+> **Signed-in result (2026-10-22):** the wire format, roles, stream, usage, Auto harness and undo behaviour observed on Hunter's account are in [observed-network.md](observed-network.md).
+
 How one Underlord turn runs, end to end. Evidence tags: **decompiled** (read in the client chunks), **inferred** (reasoned from the client, not seen on the wire), **signed-in gap** (needs a HAR; see [signed-in-gaps.md](signed-in-gaps.md)).
 
 ## Two execution modes

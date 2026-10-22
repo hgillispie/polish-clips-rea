@@ -152,7 +152,7 @@ Rules: never use screenshots to locate faces, never add the AI speaker-focus eff
 
 ## How a skill gets used (summary)
 
-Details in [agent-protocol.md](agent-protocol.md#skills-injection):
+Details in [observed-network.md](observed-network.md#skills-catalog-and-skills-observed-network):
 
 1. At turn start the client filters the registry by the session's feature flags, adds the user's personal skills, and appends a catalog block to the system prompt. The block splits user skills (which may be named and listed) from agent guidance (never named).
 2. The user can also pick a skill in the UI. That sends a user message whose content is a `<skill id="…">Name</skill>` token.

@@ -170,3 +170,52 @@ Use this only as a preview of what Underlord left behind. Prefer a local word-le
 - Word intervals may touch; they must not be inverted. Small overlaps (ASR jitter under 30 ms) are clamped so `start = max(start, previous.end)`.
 - `ignored` does not imply `filler` or `retake`. A manual strike sets only `ignored`.
 - Restoring a word clears `ignored` and leaves `filler` / `retake` so the UI can still show why it was struck.
+
+## Selection as agent context (Descript, observed)
+
+From Hunter's capture (**observed-network**) and the signed build (**decompiled**). This section only covers what a transcript selection turns into when it is handed to the agent. The `Selection` type above stays our model.
+
+A word-span selection in the script, made while the agent panel is open, becomes a chip in the prompt box. The chip label is the first and last word of the span, for example `before - on.` (rule **inferred** from the label). When the prompt is sent, the chip goes along as one item of `user.context[]`:
+
+```text
+ScriptSelectionContext
+  type           "script-selection"
+  id             uuid
+  label          string        # chip text
+  compositionId  uuid
+  sceneId        uuid          # scene holding the selection start
+  scriptText     string        # exact selected text, punctuation included
+  prefix         string        # a few words before, for disambiguation
+  suffix         string        # a few words after
+```
+
+There are no word ids and no times. The agent re-resolves the text by calling `find_in_script {type: "text", scriptText, prefix?, suffix?}`. In Hunter's B4 turn it did that twice: once in the source composition and once in the clip. Our agent should send the same text anchor and the word ids, so a stale anchor can fall back to ids:
+
+```text
+function selection_to_context(transcript, sel, composition, scene):
+  words = transcript.words.between(sel.anchor_word_id, sel.focus_word_id)
+  return {
+    type: "script-selection",
+    label: words.first.text + " - " + words.last.text,
+    compositionId: composition.id, sceneId: scene.id,
+    scriptText: join_display(words),
+    prefix: join_display(words_before(words.first, 4)),
+    suffix: join_display(words_after(words.last, 4)),
+    word_ids: [w.id for w in words]          # ours; Descript does not send this
+  }
+```
+
+Chip lifecycle actions (static-bundle): `SYNC_SELECTION_CONTEXT` follows the live selection, `DISMISS_SELECTION_CONTEXT` drops it, and `ADD_CONTEXT`, `REMOVE_CONTEXT` and `CLEAR_CONTEXT` manage the list.
+
+## Inline transcript deletes cut the media (Descript, static-bundle)
+
+In Descript, deleting words in the script cuts the aligned media; there is no separate "apply" step. The script slice's action set shows how:
+
+| Edit | Action(s) | Effect |
+| --- | --- | --- |
+| Delete selected words (Backspace) | `DELETE_COMPOSITION_RANGES_PRESERVING_GAPS`, `REMOVE_WORDS_AND_ALIGNMENT_FOR_RANGES` | The time ranges under the words leave the composition. Clips are split at the range edges and the middle is removed (compare the timeline `DELETE_TAUS` "delete clips" commit in Hunter's capture) |
+| Strike through instead of delete (Ignore) | `TOGGLE_IGNORE`; `REMOVE_IGNORED_TEXT`, `RESTORE_IGNORED_TEXT`; filler pass `FILLER_WORDS_REMOVED`; search result `IGNORE_SEARCH_RESULT` | Words stay; playback skips them. This is our `ignored` flag |
+| Replace with gap clip | `DELETE_TIME_RANGE` | Removes the media but keeps the duration as a gap |
+| Restore | `RESTORE_REMOVED_MEDIA` | Brings removed media back for the range |
+
+Hunter's capture has no typed script delete. The agent used **ignore** (`edit_narration` operation `ignore`) for fillers, and `shorten_word_gaps` for pauses. A real delete in our model is a hard delete of `Word`s plus a re-splice, and it should go through the same range code as [clip-cut.md](clip-cut.md). Ignore stays the default for automated cleanup, because it is reversible.

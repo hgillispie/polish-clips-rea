@@ -1,5 +1,7 @@
 # Use room tone on gap clips
 
+> **Signed-in result (2026-10-22, observed-network):** the room tone task is `POST /v2/projects/{id}/roomtone` and then a poll. It finished in about 8–9 s and produced a separate room tone file of about 30 s, stored as an asset (`roomtone-artifact` false). Details: [signed-in-gaps.md](signed-in-gaps.md).
+
 ## Keys and defaults (decompiled)
 
 | Layer | Key | Default | Notes |

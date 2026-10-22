@@ -133,7 +133,7 @@ A shared convention (system prompt section `tool_target_types`):
 | `restore_context` | ref | Returns the original text of a compacted tool call | inline (loop) |
 | `summarize_context` | summary, end | Replaces earlier messages with the model's summary; only after a context-limit warning or on user request | inline (loop) |
 | `edit_memory` | mode (append, replace, delete, clear_scope), scope, old_text, new_text | Edits the user's saved preferences ("Underlord Instructions") | app |
-| `load_skill` | id, source (global, drive, user), name | Loads a skill body (see [agent-protocol.md](agent-protocol.md#skills-injection)) | app |
+| `load_skill` | id, source (global, drive, user), name | Loads a skill body (see [observed-network.md](observed-network.md#skills-catalog-and-skills-observed-network)) | app |
 | `save_skill` / `delete_skill` | mode, name, description, content, id, status / id, name | Personal skill CRUD via `/agent-instructions`; delete must be confirmed by the user in chat | app |
 | `search_help` | query | Searches Descript help (Zendesk, or Mintlify behind a flag) via `/agent/search_help` | inline |
 | `web_search` | query | Cited web answer; alternatively the gateway's native web-search plugin is attached (flag `agent-web-search-enabled`) | inline |

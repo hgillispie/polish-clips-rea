@@ -1,5 +1,7 @@
 # Apply Smart transitions to new scenes
 
+> **Signed-in result (2026-10-22, observed-network):** neither the agent's `add_scene_boundaries` nor a manual Split scene added a Smart transition in Hunter's project. Whether his local pref was off is unknown. An explicit crossfade is stored as `videoFades` with type `com.descript.crossFadeTransition`. Details: [signed-in-gaps.md](signed-in-gaps.md).
+
 ## Keys and defaults (decompiled)
 
 | Layer | Key | Default |

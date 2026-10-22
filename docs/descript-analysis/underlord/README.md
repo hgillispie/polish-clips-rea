@@ -10,7 +10,11 @@ Evidence tags: **decompiled** (read in a Wakaru-recovered module, call sites tra
 | [skill-graph.md](skill-graph.md) | The `{{sub-skill}}` reference graph as a mermaid diagram, with present vs missing bodies |
 | [agent-tools.md](agent-tools.md) | The 86-name tool registry: arguments, what each one changes in the document, where it runs |
 | [agent-protocol.md](agent-protocol.md) | How a turn is sent and streamed, tool-call/result messages, planning and approval, rollback, models, credits, chat persistence |
-| [signed-in-gaps.md](signed-in-gaps.md) | **Gaps that need a signed-in capture.** Read before the HAR pass |
+| [observed-network.md](observed-network.md) | **Signed-in capture (2026-10-22):** completions request and SSE shape, message roles, the screenshot sub-call, client tool execution, Auto, @-context chips, skills catalog, templates/instructions/chats, the 72 tools sent, stop and undo, flags |
+| [prompt-catalog.md](prompt-catalog.md) | Each of Hunter's 8 prompts, with the tools called in order, the edits applied and the reply shape |
+| [skill-picker-and-opener.md](skill-picker-and-opener.md) | The `/` skill picker and what a pick sends, the "Improve this video" card, the suggestion empty state and the opener |
+| [signed-in-gaps.md](signed-in-gaps.md) | The signed-in gap table, with results from the capture and what is still open |
+| [../ai-tools/](../ai-tools/) | The AI Tools panel catalog, Smooth jump cuts, Automatic multicam, and the Publish/Write prompt-action pipeline |
 
 Pseudocode for our own Underlord-style agent: [../../pseudocode/underlord/](../../pseudocode/underlord/).
 
@@ -69,7 +73,7 @@ The first Descript pass documented Underlord only through the public `POST /v1/j
 
 ## Gaps needing signed-in capture
 
-Summarized here, detailed in [signed-in-gaps.md](signed-in-gaps.md):
+**Update 2026-10-22:** most of these were answered by Hunter's capture; see [observed-network.md](observed-network.md) and the result column in [signed-in-gaps.md](signed-in-gaps.md). The original list:
 
 - Response bodies and headers of `/agent/completions` (whether it is a plain OpenAI-style SSE pass-through, and what usage or credit fields come back).
 - Whether the 14 missing sub-skill bodies (including `find-highlights`) are served by the backend, injected into completions server-side, or simply do not exist yet.
