@@ -22,8 +22,8 @@ Operators continue this work from **Grok Bot** with **REA** (`rea-agents` 6.7.0)
 | [docs/api-notes.md](docs/api-notes.md) | Public OpenAPI shapes, plus editor routes on `api.descript.com` (eye gaze, mask, lip sync, speech enhancement). |
 | [docs/reuse-rescript.md](docs/reuse-rescript.md) | Whether to study [wassgha/rescript](https://github.com/wassgha/rescript) or rebuild the editor. |
 | [docs/grokbot-rea.md](docs/grokbot-rea.md) | REA on Grok Bot. No Claude Desktop setup. |
-| [docs/pseudocode/](docs/pseudocode/) | Pipeline, editor, and bundle-backed effect specs (Eye Contact, Look Good, Video Regenerate, Publish AI). |
-| [docs/descript-analysis/](docs/descript-analysis/) | Bundle notes for Eye Contact, the enhance suite, Video Regenerate, Publish AI, and skin smoothing. |
+| [docs/pseudocode/](docs/pseudocode/) | Pipeline, editor, and bundle-backed effect specs (Eye Contact, Look Good, Video Regenerate, Publish AI), our Underlord-style agent ([underlord/](docs/pseudocode/underlord/)), and editor settings ([editor-settings/](docs/pseudocode/editor-settings/)). |
+| [docs/descript-analysis/](docs/descript-analysis/) | Bundle notes for Eye Contact, the enhance suite, Video Regenerate, Publish AI, skin smoothing, the Underlord agent ([underlord/](docs/descript-analysis/underlord/)), and three editor settings: room tone, Smart transitions, wordless media ([editor-settings/](docs/descript-analysis/editor-settings/)). |
 
 ## Next steps
 
@@ -33,3 +33,5 @@ Operators continue this work from **Grok Bot** with **REA** (`rea-agents` 6.7.0)
 4. Eye Contact, the Look Good suite, Video Regenerate, and Publish AI are specified from the public bundle and are later than the polish pipeline. Video Regenerate is `lip_sync` variant `imputation`, not `generate-video`. A voice clone waits on [docs/pseudocode/voice-consent.md](docs/pseudocode/voice-consent.md); the picture step also waits on the visual confirmation in [docs/pseudocode/video-regenerate.md](docs/pseudocode/video-regenerate.md). Punch-in voiceover does not need the voice record.
 
 Working hypothesis, not a decision: a public-API job plus a rescript-like transcript editor is a better Polish Clips MVP than cloning the Descript web app. The current rescript `LICENSE` is PolyForm Noncommercial, so read [docs/reuse-rescript.md](docs/reuse-rescript.md) before copying any of that code.
+
+In-progress work and open signed-in gaps: [HANDOFF.md](HANDOFF.md).
