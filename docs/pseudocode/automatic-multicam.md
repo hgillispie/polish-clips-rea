@@ -1,5 +1,7 @@
 # Automatic multicam (our version)
 
+> **Input.** Camera tracks should be synced first by [auto-audio-sync.md](auto-audio-sync.md). Its `SyncGroup` (offsets, speed factors, master audio) is the multicam group this file switches between.
+
 Pick a camera (or a layout) per scene from who is speaking. Modelled on Descript's action ([../descript-analysis/ai-tools/automatic-multicam.md](../descript-analysis/ai-tools/automatic-multicam.md)). It needs a diarized transcript ([transcript-model.md](transcript-model.md)) and at least two video tracks.
 
 ## Settings

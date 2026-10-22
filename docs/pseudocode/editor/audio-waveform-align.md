@@ -1,5 +1,7 @@
 # Align clips by waveform
 
+> **Superseded** for anything beyond one pair by [../auto-audio-sync.md](../auto-audio-sync.md) (spec: [../../features/auto-audio-sync/README.md](../../features/auto-audio-sync/README.md)). That version adds batch session grouping, drift correction, confidence, timecode/file-time hints and a silent-clip fallback. This file stays as the minimal two-clip reference.
+
 Place two recordings of the **same scene** on parallel tracks so their audio matches in time. The operator can then switch which video is visible. This is multicam sync, not Descript's Automatic Multicam.
 
 Descript's help describes **Automatic Multicam** as detecting speaker changes in a multi-track sequence, creating scenes, and switching the angle to whoever is talking (static, help index, 2026-10-19). That is a cut decision. This file only finds an offset. It does not decide who is on screen.
