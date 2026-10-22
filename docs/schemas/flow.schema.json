@@ -1,0 +1,1148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/hgillispie/polish-clips-rea/docs/schemas/flow.schema.json",
+  "title": "Flow (interactive demo document)",
+  "description": "Our clean-room schema for an Arcade-style interactive demo. Derived from field names/defaults documented in docs/pseudocode/model/*.md (evidence: decompiled + observed). Not copied from Arcade source.",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "steps",
+    "aspectRatio",
+    "teamId"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "teamId": {
+      "type": "string"
+    },
+    "createdBy": {
+      "type": "string"
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "modified": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "editors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "folderId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "tagIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "enum": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "description": "draft 1, published 2, archived 3, deleted 4, recording 5, error 6, pending 7"
+    },
+    "publishedDate": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "name": {
+      "type": "string"
+    },
+    "titleSource": {
+      "enum": [
+        "default",
+        "ai",
+        "user"
+      ]
+    },
+    "externalName": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "type": "string"
+    },
+    "aspectRatio": {
+      "type": "number",
+      "description": "height / width"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Step"
+      }
+    },
+    "createdWith": {
+      "type": "string"
+    },
+    "uploadId": {
+      "type": "string"
+    },
+    "capturedEvents": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "videoTimestampWindows": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "customVariables": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "fallback": {
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "ISO string or serialized date object"
+          }
+        }
+      }
+    },
+    "originalLanguage": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "file",
+              "link"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "menu": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "targetId": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "cta": {
+      "type": "object"
+    },
+    "flowWrapper": {
+      "enum": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "customCursor": {
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "font": {
+      "type": "string",
+      "default": "Inter"
+    },
+    "bgImage": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "themeId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sharePageThemeId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "openingAnimation": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "showStartOverlay": {
+      "type": "boolean"
+    },
+    "startOverlayButtonText": {
+      "type": "string"
+    },
+    "showFlowNavIndicator": {
+      "enum": [
+        "ON",
+        "AUTO",
+        "OFF",
+        true,
+        false
+      ]
+    },
+    "showBackNextButtons": {
+      "type": "boolean"
+    },
+    "disableKeyboardNavigation": {
+      "type": "boolean"
+    },
+    "showCaptions": {
+      "type": "boolean"
+    },
+    "captionsVisible": {
+      "type": "boolean"
+    },
+    "showCopyLink": {
+      "type": "boolean"
+    },
+    "showFullscreen": {
+      "type": "boolean"
+    },
+    "showReplay": {
+      "type": "boolean"
+    },
+    "showTranslation": {
+      "type": "boolean"
+    },
+    "showChapterStyleOnPopout": {
+      "type": "boolean"
+    },
+    "showArcadeButton": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "demoModeByDefault": {
+      "type": "boolean"
+    },
+    "keepSoundOffUntilEnabled": {
+      "type": "boolean"
+    },
+    "optimizeFlowForMobileView": {
+      "type": "boolean"
+    },
+    "mobileLayout": {
+      "enum": [
+        "fit",
+        "wide",
+        null
+      ]
+    },
+    "mobileBackground": {},
+    "autoplay": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "delay": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "backgroundMusicUrl": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "backgroundMusicVolume": {
+      "type": "number"
+    },
+    "useMagicCursor": {
+      "type": "boolean"
+    },
+    "watermark": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "ogImagePreset": {
+      "enum": [
+        "style1",
+        "style2",
+        "style3",
+        "style4",
+        null
+      ]
+    },
+    "thumbnailUrl": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "gifUrl": {
+      "type": "string"
+    },
+    "videoUrl": {
+      "type": "string"
+    },
+    "prefs": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "sharePageLayout": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "default",
+            "compact",
+            "arcade-only",
+            "sidebar"
+          ]
+        },
+        "showHeader": {
+          "type": "boolean"
+        },
+        "showLogo": {
+          "type": "boolean"
+        },
+        "showButton": {
+          "type": "boolean"
+        },
+        "showDescription": {
+          "type": "boolean"
+        },
+        "showResources": {
+          "type": "boolean"
+        },
+        "showCommenting": {
+          "type": "boolean"
+        }
+      }
+    },
+    "sharePageLogo": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "sharePageButton": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "sharePageFaviconUrl": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "crawlable": {
+      "type": "boolean"
+    },
+    "useVersioning": {
+      "type": "boolean"
+    },
+    "versionId": {
+      "type": "string"
+    },
+    "isTemplate": {
+      "type": "boolean"
+    },
+    "autoSplit": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "useCase": {
+      "enum": [
+        "promotional",
+        "educational",
+        "sales",
+        "custom",
+        null
+      ]
+    }
+  },
+  "$defs": {
+    "Size": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "width",
+        "height"
+      ]
+    },
+    "Rect": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ]
+    },
+    "PanAndZoom": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "zoomLevel": {
+          "type": "number",
+          "default": 1.5
+        },
+        "position": {
+          "type": "object",
+          "description": "{x,y} in 0..1 (or px) or {left,top} fractions"
+        }
+      }
+    },
+    "VideoPanAndZoom": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/PanAndZoom"
+        }
+      ],
+      "properties": {
+        "startTimeFrac": {
+          "type": "number"
+        },
+        "endTimeFrac": {
+          "type": "number"
+        }
+      }
+    },
+    "SyntheticVoice": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "script": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "playbackRate": {
+          "type": "number"
+        },
+        "timepoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "markName": {
+                "type": "string"
+              },
+              "timeSeconds": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "voice": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "languageCode": {
+              "type": "string"
+            },
+            "provider": {
+              "enum": [
+                "elevenlabs",
+                "google"
+              ]
+            },
+            "model": {
+              "type": "string"
+            },
+            "variant": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "CameraRecording": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "placement": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string"
+        },
+        "shape": {
+          "type": "string"
+        },
+        "audioOnly": {
+          "type": "boolean"
+        },
+        "startTimeFrac": {
+          "type": "number"
+        },
+        "endTimeFrac": {
+          "type": "number"
+        },
+        "offsetStartTimeFrac": {
+          "type": "number"
+        },
+        "playbackRate": {
+          "type": "number"
+        },
+        "processing": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Hotspot": {
+      "type": "object",
+      "required": [
+        "id",
+        "x",
+        "y"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "width": {
+          "type": "number",
+          "default": 40
+        },
+        "height": {
+          "type": "number",
+          "default": 40
+        },
+        "style": {
+          "enum": [
+            "pulsating",
+            "callout",
+            "area"
+          ],
+          "default": "pulsating"
+        },
+        "label": {
+          "type": "string"
+        },
+        "defaultOpen": {
+          "type": "boolean"
+        },
+        "hideButton": {
+          "type": "boolean"
+        },
+        "preferredDirection": {
+          "type": "string"
+        },
+        "calloutArrowDirection": {
+          "type": "string"
+        },
+        "shape": {
+          "type": "string"
+        },
+        "bgColor": {
+          "type": "string"
+        },
+        "textColor": {
+          "type": "string"
+        },
+        "borderColor": {
+          "type": "string"
+        },
+        "overlayColor": {
+          "type": "string"
+        },
+        "targetId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pathType": {
+          "enum": [
+            "step",
+            "url",
+            "crossFlow"
+          ]
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "openInTheSameTab": {
+          "type": "boolean"
+        },
+        "targetFlowId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "targetStepId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "syncTextToVoiceover": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Path": {
+      "type": "object",
+      "required": [
+        "id",
+        "pathType"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "buttonText": {
+          "type": "string"
+        },
+        "buttonColor": {
+          "type": "string"
+        },
+        "buttonTextColor": {
+          "type": "string"
+        },
+        "pathType": {
+          "enum": [
+            "step",
+            "url",
+            "crossFlow",
+            "input"
+          ]
+        },
+        "targetStepId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "openInTheSameTab": {
+          "type": "boolean"
+        },
+        "targetFlowId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fieldLabel": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "variant": {
+          "type": "string",
+          "description": "form inputs: text | email | single-select | multi-select | hidden | \u2026"
+        }
+      }
+    },
+    "PageContext": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        },
+        "language": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ClickContext": {
+      "type": "object",
+      "properties": {
+        "cssSelector": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "elementType": {
+          "enum": [
+            "button",
+            "link",
+            "image",
+            "input",
+            "select",
+            "other"
+          ]
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "originalRect": {
+          "$ref": "#/$defs/Rect"
+        }
+      }
+    },
+    "StepBase": {
+      "type": "object",
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "hiddenFromNavigation": {
+          "type": "boolean"
+        },
+        "skipped": {
+          "type": "boolean"
+        }
+      }
+    },
+    "MediaCommon": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "size": {
+          "$ref": "#/$defs/Size"
+        },
+        "assetId": {
+          "type": "string"
+        },
+        "pageContext": {
+          "$ref": "#/$defs/PageContext"
+        },
+        "clickContext": {
+          "$ref": "#/$defs/ClickContext"
+        },
+        "panAndZoom": {
+          "$ref": "#/$defs/PanAndZoom"
+        },
+        "coverAndFit": {
+          "type": "object"
+        },
+        "syntheticVoice": {
+          "$ref": "#/$defs/SyntheticVoice"
+        },
+        "cameraRecording": {
+          "$ref": "#/$defs/CameraRecording"
+        },
+        "cta": {
+          "type": "object"
+        },
+        "mobileButton": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "color": {
+              "type": "string"
+            },
+            "targetId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "title": {
+          "type": "string"
+        },
+        "subtitle": {
+          "type": "string"
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "autoplay": {},
+        "showLogo": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ImageStep": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/StepBase"
+        },
+        {
+          "$ref": "#/$defs/MediaCommon"
+        }
+      ],
+      "properties": {
+        "type": {
+          "const": 1
+        },
+        "originalImageUrl": {
+          "type": "string"
+        },
+        "blurhash": {
+          "type": "string"
+        },
+        "hasHTML": {
+          "type": "boolean"
+        },
+        "imageEditorState": {
+          "type": "object",
+          "properties": {
+            "redaction": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Rect"
+              }
+            },
+            "crop": {
+              "$ref": "#/$defs/Rect"
+            }
+          }
+        },
+        "hotspots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hotspot"
+          }
+        }
+      }
+    },
+    "VideoStep": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/StepBase"
+        },
+        {
+          "$ref": "#/$defs/MediaCommon"
+        }
+      ],
+      "properties": {
+        "type": {
+          "const": 2
+        },
+        "duration": {
+          "type": "number",
+          "description": "seconds of the whole source"
+        },
+        "startTimeFrac": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "endTimeFrac": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "clipDuration": {
+          "type": "number"
+        },
+        "playbackRate": {
+          "type": "number"
+        },
+        "muted": {
+          "type": "boolean"
+        },
+        "videoProcessing": {
+          "type": "boolean"
+        },
+        "streamUrl": {
+          "type": "string"
+        },
+        "videoThumbnailUrl": {
+          "type": "string"
+        },
+        "videoPanAndZooms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/VideoPanAndZoom"
+          }
+        },
+        "targetId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hotspots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Hotspot"
+          },
+          "description": "Observed: callouts can sit on video steps (legacy migration emptied them)."
+        }
+      }
+    },
+    "OverlayStep": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/StepBase"
+        }
+      ],
+      "properties": {
+        "type": {
+          "const": 3
+        },
+        "title": {
+          "type": "string"
+        },
+        "subtitle": {
+          "type": "string"
+        },
+        "theme": {
+          "enum": [
+            "dark",
+            "light",
+            "custom"
+          ]
+        },
+        "customTheme": {
+          "type": "object"
+        },
+        "blur": {
+          "enum": [
+            "none",
+            "small",
+            "medium"
+          ]
+        },
+        "variant": {
+          "enum": [
+            "buttons",
+            "form",
+            "embeds"
+          ],
+          "default": "buttons"
+        },
+        "textAlign": {
+          "type": "string"
+        },
+        "showPreviewImage": {
+          "type": "boolean"
+        },
+        "previewImage": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "step"
+            },
+            "stepId": {
+              "type": "string"
+            }
+          }
+        },
+        "showLogo": {
+          "type": "boolean"
+        },
+        "logo": {},
+        "paths": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Path"
+          }
+        },
+        "formFields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Path"
+          }
+        },
+        "embedCode": {
+          "type": "string"
+        },
+        "syntheticVoice": {
+          "$ref": "#/$defs/SyntheticVoice"
+        },
+        "cta": {
+          "type": "object"
+        },
+        "autoplay": {}
+      }
+    },
+    "EmptyStep": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/StepBase"
+        }
+      ],
+      "properties": {
+        "type": {
+          "const": 4
+        }
+      }
+    },
+    "Step": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ImageStep"
+        },
+        {
+          "$ref": "#/$defs/VideoStep"
+        },
+        {
+          "$ref": "#/$defs/OverlayStep"
+        },
+        {
+          "$ref": "#/$defs/EmptyStep"
+        }
+      ]
+    }
+  }
+}

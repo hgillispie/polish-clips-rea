@@ -1,142 +1,86 @@
-# Architecture
+# Architecture (as recovered from Arcade, and as we will build it)
 
-Polish Clips reads Descript as three layers. Only the first two matter for the pipeline. Claims are tagged **static**, **observed**, or **inferred**.
+Evidence tags: **decompiled** (Wakaru module), **static-bundle** (raw JS string),
+**observed** (public response), **static-help**, **inferred**.
 
-```text
-┌──────────────────────────┐
-│ macOS Descript 2.21.1    │  thin Electron shell (static)
-│ app.asar ~1 MB JS        │  loadURL → web host
-└────────────┬─────────────┘
-             │
-┌────────────▼─────────────┐
-│ web.descript.com         │  product UI (not in the ASAR)
-└────────────┬─────────────┘
-             │
-┌────────────▼─────────────┐
-│ descriptapi.com/v1       │  documented jobs: import, agent, publish
-└──────────────────────────┘
+## 1. Hosts and deployables
 
-Polish Clips MVP (inferred recommendation)
-┌──────────────────────────┐     optional      ┌─────────────────────┐
-│ Transcript editor        │ ────────────────► │ POST /v1/jobs/agent │
-│ word model + ignore flags│ ◄──────────────── │ poll job, credits   │
-└────────────┬─────────────┘                   └─────────────────────┘
-             │ local enhance / captions / cut
-             ▼
-        exported clip
-```
-
-## Desktop shell (static)
-
-| Fact | Value |
-| --- | --- |
-| Path | `/Applications/Descript.app` |
-| Bundle id | `com.descript.beachcube` |
-| Version | 2.21.1 |
-| URL schemes | `descript`, `descriptbc` |
-| Package | Electron Forge, `productName` Descript, main `.webpack/main` |
-| Packaged ASAR | ~987 KB; extracted JS ~1 MB |
-| Extracted sha256 | `bad2f88655ce569cba1a302fcf97a03fd86bdd26d88c4005e64e8043537a8605` |
-| Runtime deps in the shell | `@sentry/electron`, `electron-store`, `lodash`, `@electron/notarize` |
-| Security prefs | `nodeIntegration: false`, `contextIsolation` present, `webSecurity: true`, preload `.webpack/renderer/main_window/preload.js` |
-
-`loadURL` targets:
-
-- prod `https://web.descript.com`
-- staging `https://staging-web.descript.com` and `https://staging-api-web.descript.com`
-- qa `https://qa-web.descript.com`
-- local `https://local-dev.descript.com:3000`
-
-Monorepo package names appear as devDependencies (`@descript/electron-utils`, a recorder, rust-mouse-tracker, sckit-helper). They are not shipped inside this ASAR (static). The Sentry DSN in the shell is ops configuration; ignore it for product specs.
-
-**Implication (inferred from the static shell):** filler removal, retakes, Studio Sound, captions, and clip cutting are web and API behaviour. Re-analyzing the ASAR will not specify them.
-
-Info.plist `ElectronAsarIntegrity` does not equal the extracted-tree sha256. That is the signed package hash (static observation of the mismatch; the exact plist hash is not needed here).
-
-## Web app
-
-The prod UI origin is `https://web.descript.com` (static, from the shell's host list and from `project_url` examples in the OpenAPI). Project links look like `https://web.descript.com/{project_id}` and sometimes gain a composition short-id suffix.
-
-How the web client stores edits (operation log, CRDT, or snapshot) is **unknown**. The public API does not expose an edit log. Do not block the MVP on that question.
-
-## API
-
-Server URL: `https://descriptapi.com/v1` (static, OpenAPI 1.2 snapshot, 2026-10-19). Details and error tables: [api-notes.md](api-notes.md).
-
-The job lifecycle every feature shares:
-
-1. `POST` a job (`/jobs/import/project_media`, `/jobs/agent`, or `/jobs/publish`).
-2. Receive `job_id` immediately, plus `project_id` and `project_url`.
-3. Poll `GET /jobs/{job_id}` or receive the same payload on `callback_url`.
-4. Stop when `job_state` is `stopped` or `cancelled`.
-5. Branch on `result.status`: `success`, `partial` (import only), or `error`.
-
-Transcript export (`POST /export/transcript`) is synchronous. It returns a file body, not a job.
-
-## Polish Clips process
-
-Two backends, one pipeline. The orchestrator is specified in [pseudocode/polish-pipeline.md](pseudocode/polish-pipeline.md).
-
-| Backend | Owns | Limit |
+| Host / artifact | Role | Evidence |
 | --- | --- | --- |
-| Open stack | Word model, ignore flags, retake marks, local enhance, caption cues, caption style, optional burn-in, the editor timeline | Quality of the chosen ASR and denoiser |
-| Descript API (`descriptapi.com/v1`) | Import + server transcription, Underlord prompt, publish URL | No word-level JSON, no ignore flag, and no caption-style schema (**static** OpenAPI). Prompt wording is the only control on this host |
-| Editor project routes (`api.descript.com`) | Eye gaze, background mask, face tracking, lip-sync imputation, speech enhancement | Not the public OpenAPI. Specs in [pseudocode/visual-effects-model.md](pseudocode/visual-effects-model.md). Later than the polish pipeline |
+| `app.<domain>` | Editor + dashboard. Next.js pages router, Turbopack chunks under `/_next/static/immutable/chunks/`. ~180 routes in `_buildManifest.js` (`/flows/[pid]/edit`, `/flows/[pid]/insights`, `/upload/[id]/flow`, `/workspaces/[slug]/…`). Middleware proxies `/api/*`, `/cdn-proxy`, `/s3-proxy`, `/mux-proxy`, `/transform-proxy`. | static-bundle |
+| `demo.<domain>` | Public share pages `/share/[pid]`, `/share/[pid]/[customLinkId]`, `/share/[pid]/guide`, `/share/[pid]/offline`. Page data at `/_next/data/<build>/share/<id>.json`. | observed |
+| `demo.<domain>/embed/v1/loader.js` | Web-component loader. Fetches `/embed/v1/flows/<id>` payload, then imports a versioned standalone runtime (`rendererRevision`) with SRI. | observed |
+| `cdn.<domain>` | Image/asset CDN with on-the-fly resize (`/cdn-cgi/image/fit=scale-down,format=auto,dpr=2,width=N/<path>`). | static-bundle |
+| Video host (Mux) | HLS `stream.mux.com/<playbackId>.m3u8`, thumbnails `image.mux.com/<id>/thumbnail.webp?time=`, static MP4 renditions. | static-bundle, observed |
+| Document DB (Firebase/Firestore) | Collections `flows` (+ subcollections `versions`, `mediaProcessingJobs`), plus users, teams, workspaces, exports, uploads, customLinks, flowsCollections, insights, comments, translations, voiceovers … Client reads with live listeners; writes mostly go through `/api/*`. | decompiled |
+| Object storage | Signed PUT URLs issued by `/api/extension/upload-url` and `/api/upload*`. | decompiled |
+| Analytics ingest | Segment-compatible endpoint on a first-party host (`t.<domain>/api/ingest`), PostHog-style `/ingest`. | static-bundle |
+| Chrome extension "interactive demo" (MV3, v1.9.33) | Capture. See [arcade-analysis/extension.md](arcade-analysis/extension.md). | decompiled |
+| Chrome extension "AI video" (v1.0.26) | Side-panel recorder with camera bubble and cursor tracker. Not analysed in depth. | static-bundle (manifest only) |
+| Desktop app | Exists (native-messaging host `com.arcade.desktop`, `/desktop/download`, `/upload/desktop/[uploadInfo]`, macOS-style mouse/keyboard events). **Not downloaded.** Only its upload format is known from the web step builder. | static-bundle, decompiled (web side) |
 
-The local editor (tracks, layers, mixer, transcript-linked edits) is specified under [pseudocode/editor/](pseudocode/editor/). It is our canvas, not a clone of the Descript window.
+Third parties seen: Sentry, Segment, PostHog, HubSpot, Liveblocks (comments),
+ElevenLabs + Google TTS (synthetic voice), Clearbit (Audience Reveal),
+Mux (video), Firebase Auth (ID tokens on `fetchWithToken`). (static-bundle)
 
-## Effect and artifact pipeline
+## 2. End-to-end data flow
 
-Recovered from the public web bundle (build `react19/9a29d61183bce669600a9dd9a1f8588d708becac`, chunk 88). Tags: **static-bundle**. The desktop ASAR does not contain this graph.
-
-```text
-operator toggles an effect on a video or audio ref
-        │
-        ▼
-media flags
-  eyeContactRequested          beautifyRequested
-  backgroundMaskRequested      speakerFocusRequested
-  portraitLightingRequested    speechEnhanceEnabled
-  uplightingRequested          lipSyncRequested
-        │
-        ▼
-POST https://api.descript.com/projects/{id}/{endpoint}
-  eye_gaze_correction     → artifact eye_contact          type artifact
-  background_removal      → artifact background_mask      type blocking
-  face_tracking           → artifact face_tracking        type artifact
-  lip_sync  variant=imputation   → imputation_lip_sync    displayName "Video Regenerate"
-  lip_sync  variant=translation  → translation_lip_sync   displayName "lip-sync"
-  speech_enhancement      → artifact speech_enhanced
-        │
-        │  GET .../{endpoint}/{taskId}
-        │  HTTP 429 → { id, state: "hold" }
-        ▼
-inputArtifactType is "original" on these tasks
-(server jobs do not chain; the client composites)
-        │
-        ▼
-ordered VisualEffectNode list on the layer
-  HD ids com.descript.eyeContact | backgroundBlur | backgroundRemoval
-        | portraitLighting | uplighting | speakerFocus
-  local: com.descript.chromakey, com.descript.colorAdjustments, skin_smoothing
-        │
-        ▼
-preview and export (layers.md apply_visual_effects, then crop and transform)
+```
+ ┌──────────── Chrome extension (MV3) ─────────────┐
+ │ content script (all frames)                      │
+ │   pointer/scroll/key/input listeners ──► events  │
+ │   frame geometry reports                         │
+ │   optional getCleanHTML snapshot                 │
+ │ service worker                                   │
+ │   captureVisibleTab every 500 ms (ring of 4)     │
+ │   tabCapture stream id ──► offscreen document    │
+ │ offscreen document                               │
+ │   MediaRecorder(webm/vp9) + ffmpeg.wasm remux    │
+ │   blurhash / JSON→blob URL helpers               │
+ └───────────┬─────────────────────────────────────┘
+             │ direct-upload path (flag mayUseDirectUpload)
+             │   POST /api/extension/demo-start  → flowId
+             │   POST /api/extension/upload-url  → signed PUT (image|video|html)
+             │   POST /api/extension/image       → per-click analysis (blurhash, AI copy)
+             │   POST /api/mux/create-asset
+             │   POST /api/extension/demo-end    → server builds steps
+             │ fallback path
+             │   open app /upload/flow, page pulls payload via content-script postMessage,
+             │   builds steps client-side (parseExtensionCapture), uploads, writes flow
+             ▼
+ ┌──────────────── Backend ────────────────┐
+ │ flows/{id} document (Flow JSON)          │
+ │ async jobs: AI hotspot text, smart split │
+ │   (video→demo), translations, voiceover, │
+ │   exports (GIF/MP4), video generation    │
+ └───────────┬─────────────────────────────┘
+             ▼
+ ┌──────── Editor (app) ────────┐   ┌──────── Player (share / embed) ────────┐
+ │ edits Flow via PATCH /api/flows│  │ public flow JSON → stage → steps        │
+ │ live Firestore listeners       │  │ hotspots, overlays, nav, autoplay       │
+ │ comments (Liveblocks)          │  │ events → Segment ingest + postMessage   │
+ └────────────────────────────────┘  └─────────────────────────────────────────┘
 ```
 
-One `background_removal` POST feeds blur, green screen, portrait lighting, and uplighting. Eye contact, face tracking, and lip sync are separate POSTs. Skin smoothing sets `beautifyRequested` and has no recovered endpoint; the agent copy charges 5 AI credits per file on first apply.
+## 3. Components we will build (mapping)
 
-`generate-video` is not in this diagram. It is a kebab in the generative action set. Video Regenerate is only the imputation branch.
+| Ours | Mirrors | Notes |
+| --- | --- | --- |
+| `extension/` MV3 (service worker, content script, offscreen doc, popup) | Arcade CRX | Same permission set minus the ones we do not need (no `debugger`, no `nativeMessaging` for v1). |
+| `packages/model` | shared types chunk | Flow/Step/Hotspot types + zod schemas + migrations. |
+| `packages/step-builder` | `parseExtensionCapture` | Pure function, unit-testable with fixture captures. |
+| `packages/player` | standalone runtime (`initial-*.js`) | React, no app dependencies, mountable into iframe page and web component. |
+| `apps/web` | Next.js app | Editor, dashboard, share pages, API routes. |
+| `services/jobs` | server-side workers | Exports, AI copy, translations, TTS, smart split. |
 
-Publish AI (`suggest-title`, `youtube-description-v2`, `show-notes-v2`, skill `prepare-for-publish`) does not enter this graph and does not call `POST /v1/jobs/publish`.
+Storage choice for v1 (inferred, ours): Postgres JSONB for the Flow document
+(the Flow is always read/written whole) + S3-compatible object storage + a
+video host (Mux or self-hosted HLS). Firestore is what Arcade uses; we do not
+need its live listeners for v1.
 
-## Out of scope for this architecture
+## 4. Auth model (static-bundle, inferred)
 
-- Cloning the Descript web UI.
-- Recovering native add-ons from the desktop app.
-- Credential capture or auth bypass.
-- Translate / dub as a product (`variant: "translation"` is documented so it is not mixed up with Video Regenerate). Rooms, Brand Studio.
-- Kebab `generate-video` (prompt to a new clip).
-- Pasting recovered JavaScript into this repo. Specs cite symbols only.
-- A voice clone without the consent gate in [pseudocode/voice-consent.md](pseudocode/voice-consent.md). Punch-in voiceover does not need that gate.
-- Video object removal as an MVP stage. The later spec is [pseudocode/object-removal.md](pseudocode/object-removal.md).
+- App calls use a Firebase ID token: `fetchWithToken(idToken, method, path, body)` sends `Authorization: <token>`.
+- The extension calls `/api/extension/*` with cookies (`withCredentials: true`); the app passes the signed-in user to the extension via `chrome.runtime.sendMessage(extId, {name:"UserFromApp", user})` (`externally_connectable` for `*.arcade.software`).
+- Desktop app auth uses a device flow: `/auth/desktop/[authId]` page → `POST /api/auth/desktop/{authId}/authorize`.
+- Viewer endpoints (`/api/viewer/form`, share JSON, embed payload) are unauthenticated.

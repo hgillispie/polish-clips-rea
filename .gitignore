@@ -15,3 +15,12 @@ credentials/
 secrets/
 *token*.json
 *credentials*
+
+# Arcade RE: raw bundles, CRX contents and Wakaru output stay local.
+arcade-rea-research/
+raw/
+recovered/
+*.crx
+*.zip
+*.wasm
+*.map
