@@ -1,5 +1,7 @@
 # Create-clips workflow (macro skill example)
 
+> **`find_highlights` is now specified** in [../find-highlights.md](../find-highlights.md) (spec: [../../features/find-highlights/README.md](../../features/find-highlights/README.md)). It returns scored clips with title, hook and description per platform. Step 4 below is the short version.
+
 What Descript's `create-clips` macro does (see [../../descript-analysis/underlord/skill-library.md](../../descript-analysis/underlord/skill-library.md)), redone as our skill plus tool calls. Highlight finding is the backlog item; here it is a single tool so the workflow is complete.
 
 ## Input / output
