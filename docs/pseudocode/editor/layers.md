@@ -151,3 +151,67 @@ function artifacts_for(clip) -> object:
 | Opacity outside 0..1 | Clamp on write |
 | Missing image or font | Skip the layer and add a report line. Do not fail the whole preview |
 | Rotation on a caption block | Allowed. The safe-margin clamp runs before rotation, so a large rotation can leave the frame. That is the operator's choice |
+
+## Descript menus mapped to actions (for comparison)
+
+From the signed build (**decompiled**: chunk 8211 for the timeline context menu, the app chunk for the New layer menu and the empty-scene overlay). Item labels are Descript's UI text. The right-hand column is the Redux action each item dispatches; `analyticsCtx.context` is `timeline/context_menu` or `add_new_layer_panel`. Use these as a checklist for our own menu. Our commands do not need the same names.
+
+### Right-click a timeline clip
+
+| Item | Action |
+| --- | --- |
+| Split scene at playhead | `EDITOR/CARD ADD_CARD_BOUNDARY_AT_TIME_OFFSET` (observed as commit "split scene") |
+| Add layer ▸ | Opens the New layer menu below (flag `plus-insert-button`) |
+| Reorder ▸ | `REORDER_CARD_LAYERS_WITH_SOURCE_TRACK_ID` |
+| Edit sequence | `SET_ACTIVE_SEQUENCE` |
+| View media | `SET_SIDEBAR_STATE` (media) + `SET_ACTIVE_MEDIA_REF` |
+| Split clip | `EDITOR/TIMELINE SPLIT_CLIP_AT_TIME_OFFSET` |
+| Include in script | `TRANSCRIBE_AND_MOVE_PIN_TO_SCRIPT` |
+| Remove from script | `MOVE_SCRIPT_TO_PIN` |
+| Add gap clip | `INSERT_GAP_AT_TIME_OFFSET` (default `insertGapDuration`) |
+| Edit custom animation | `SET_ACTIVE_STORYBOARD_CUE` + `SEEK_TO_TIME` |
+| Add volume keyframe · Dip volume · Auto-level clip(s) | Timeline handlers not resolved |
+| Add freeze frame | `ADD_FREEZE_FRAME_AT_TIME_OFFSET` |
+| Convert generated speech to media | `CONVERT_AI_SPEECH_TO_NORMAL_AUDIO` |
+| Detach audio | `onDetachAudio` prop; observed commit `EDITOR/MEDIA/DETACH_AUDIO_AND_VIDEO` |
+| Delete | `EDITOR/TIMELINE/DELETE_TAUS` (observed, "delete clips") |
+
+### Right-click a time range (timeline or script selection)
+
+| Item | Action |
+| --- | --- |
+| Add cue for range | Storyboard cue |
+| Add label for range | `ADD_TAG_IN_TIME_RANGE` |
+| Replace with gap clip | `DELETE_TIME_RANGE` |
+| Dip volume | Unresolved, as above |
+| Restore removed media | `RESTORE_REMOVED_MEDIA` |
+| Realign words in range | `REALIGN_TIME_RANGE` |
+| Include in / Remove from script | As above |
+
+### New layer menu ("+" or Add layer)
+
+| Item | Action |
+| --- | --- |
+| Files | Opens the project-files pane. Double-click inserts with `EDITOR/CARD_LAYER/ADD_PIN_COMPONENT {content: {type: media}}` targeting the current scene (observed as commit "add layer") |
+| Recording | `SET_WEB_RECORDER_TARGET_TYPE("card")` + `SET_TARGET_TYPE_EXPLICIT` + `TOGGLE_WEB_TIMELINE_RECORDER_TOOLBAR("camera")` |
+| Captions | A live-text layer of kind Captions |
+| Text | `ADD_PIN_COMPONENT` vector Text: font size 50, box 0.2 × 0.06 of the frame. Title (200, 0.6 × 0.15) and Subtitle (100, 0.35 × 0.1) presets also exist |
+| Placeholder | `ADD_PIN_COMPONENT` vector `{type: placeholder, variant: "b-roll"}` |
+| Live text ▸ Timer · Current marker · Current speaker · Current composition | `ADD_PIN_COMPONENT` vector live-text kinds (Current speaker = active-speaker binding) |
+| Shapes ▸ | Shapes pane |
+| Videos · Backgrounds · Images · Illustrations · Music · Sound effects | Cloud-library panes for `stock-footage`, `stock-backgrounds`, `stock-photos`, `stock-illustrations`, `stock-music`, `stock-sfx` ([stock-asset-providers.md](stock-asset-providers.md#how-descript-does-it-for-comparison)) |
+| GIPHY GIFs · GIPHY stickers | `giphy-gifs`, `giphy-stickers` panes, only with Drive feature `gifs_and_stickers` |
+| Generate image | `SET_SIDEBAR_STATE {item: Conductor}` + `SET_AI_ACTIONS_PROMPT {presetId: "generate-image", entrypoint: "selection-toolbar"}` |
+
+The order depends on the composition: audio items come first in audio-only projects, visual items first in video projects. Pane titles group the items as Videos, GIFs, Images and Audio.
+
+### Empty-scene overlay ("Create a scene" / "Create a layout")
+
+| Button | Action |
+| --- | --- |
+| Generate visuals | `SET_SIDEBAR_STATE` Conductor + `SET_AI_ACTIONS_PROMPT {presetId: "generate-image", entrypoint: "empty_scene_overlay"}` |
+| Layout / Select template | Layout picker |
+| Layer / Add layer | New layer menu |
+| Close | Offers "Hide until project is reopened" |
+
+Telemetry: `empty_scene_overlay_opened`, `empty_scene_overlay_action_clicked {generate_media | add_layout | add_layer}`, `empty_scene_overlay_dismissed`.

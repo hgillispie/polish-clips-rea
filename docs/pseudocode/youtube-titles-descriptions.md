@@ -1,5 +1,7 @@
 # YouTube titles, descriptions, and show notes
 
+> **Generalized** to all platforms in [publish-metadata.md](publish-metadata.md) (spec: [../features/publish-metadata/README.md](../features/publish-metadata/README.md), limits: [platform-profiles.md](../features/publish-metadata/platform-profiles.md)). This file remains the reference for chapters.
+
 Publish-package copy from the transcript and composition markers. Wire ids match the web client's AI actions. This does not call `POST /v1/jobs/publish` and does not render a file.
 
 Analysis: [../descript-analysis/youtube-publish-ai.md](../descript-analysis/youtube-publish-ai.md). Skill wiring: [underlord-agent-job.md](underlord-agent-job.md).

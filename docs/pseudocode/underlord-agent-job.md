@@ -3,7 +3,7 @@
 Two surfaces. They are not interchangeable.
 
 1. **Public API.** `POST /v1/jobs/agent` on `https://descriptapi.com/v1`. Shapes match the staging OpenAPI 1.2 snapshot (2026-10-19), summarized in [../api-notes.md](../api-notes.md). This is the client below.
-2. **Web client.** Chunk 88 of build `react19/9a29d61183bce669600a9dd9a1f8588d708becac` has kebab action ids and the skill `prepare-for-publish`. Eye Contact, the background mask, face tracking, lip-sync imputation, and Studio Sound POST to `https://api.descript.com/projects/{id}/...`, not to `/v1/jobs/agent`. Those payloads are in the effect specs. `descriptapi.com` does not appear in chunk 88 (**static-bundle**).
+2. **Web client (the in-editor agent).** A different runtime: an agent loop in the browser (or Descript's cloud agent) calling `POST /agent/completions` and running about 86 tools over the project document. It is fully documented in [../descript-analysis/underlord/](../descript-analysis/underlord/), and our own pseudocode for it is in [underlord/](underlord/). `descriptapi.com` does not appear in the web chunks (**static-bundle**). This file covers only the public API client.
 
 ## Input / output
 

@@ -7,7 +7,7 @@ Operators continue this work from **Grok Bot** with **REA** (`rea-agents` 6.7.0)
 ## Clean-room rules
 
 - Write behaviour, data shapes, and pseudocode. Do not paste Descript source, minified bundles, decompiled JavaScript, Wakaru modules, or recovered assets.
-- Tag claims **static** (OpenAPI or a file in this repo), **observed** (seen while something ran), **inferred** (a conclusion from those), **decompiled** (a Wakaru-recovered module), **static-bundle** (a string or slice of the public JS), or **static-help** (help copy).
+- Tag claims **static** (OpenAPI or a file in this repo), **observed** (seen while something ran; **observed-network** when it comes from a signed-in capture), **inferred** (a conclusion from those), **decompiled** (a Wakaru-recovered module), **static-bundle** (a string or slice of the public JS), or **static-help** (help copy).
 
 - Use only an account and media you own. Do not bypass paywalls, credits, or rate limits, and do not extract other people's data or server-side prompts.
 - Keep captures out of git. `.gitignore` excludes `captures/`, `*.har`, `*.saz`, `*.asar`, `.env`, and credential files. Redact bearer tokens before sharing a HAR.
@@ -22,8 +22,9 @@ Operators continue this work from **Grok Bot** with **REA** (`rea-agents` 6.7.0)
 | [docs/api-notes.md](docs/api-notes.md) | Public OpenAPI shapes, plus editor routes on `api.descript.com` (eye gaze, mask, lip sync, speech enhancement). |
 | [docs/reuse-rescript.md](docs/reuse-rescript.md) | Whether to study [wassgha/rescript](https://github.com/wassgha/rescript) or rebuild the editor. |
 | [docs/grokbot-rea.md](docs/grokbot-rea.md) | REA on Grok Bot. No Claude Desktop setup. |
-| [docs/pseudocode/](docs/pseudocode/) | Pipeline, editor, and bundle-backed effect specs (Eye Contact, Look Good, Video Regenerate, Publish AI). |
-| [docs/descript-analysis/](docs/descript-analysis/) | Bundle notes for Eye Contact, the enhance suite, Video Regenerate, Publish AI, and skin smoothing. |
+| [docs/pseudocode/](docs/pseudocode/) | Pipeline, editor, and bundle-backed effect specs (Eye Contact, Look Good, Video Regenerate, Publish AI), our Underlord-style agent ([underlord/](docs/pseudocode/underlord/)), editor settings ([editor-settings/](docs/pseudocode/editor-settings/)), [smooth-jump-cuts.md](docs/pseudocode/smooth-jump-cuts.md) and [automatic-multicam.md](docs/pseudocode/automatic-multicam.md). |
+| [docs/features/](docs/features/README.md) | Our own product designs (not Descript clones) with matching pseudocode: [visual descriptions](docs/features/visual-descriptions/README.md), [auto audio sync](docs/features/auto-audio-sync/README.md), [Find Highlights + Make Clips](docs/features/find-highlights/README.md) (scored clips with title/hook/description per platform), [publish metadata](docs/features/publish-metadata/README.md) + [platform profiles](docs/features/publish-metadata/platform-profiles.md), [highlight reel](docs/features/highlight-reel/README.md), [media montage](docs/features/media-montage/README.md), [animated story](docs/features/animated-story/README.md). |
+| [docs/descript-analysis/](docs/descript-analysis/) | Bundle notes for Eye Contact, the enhance suite, Video Regenerate, Publish AI, skin smoothing, the Underlord agent ([underlord/](docs/descript-analysis/underlord/), now with a signed-in [observed-network](docs/descript-analysis/underlord/observed-network.md) pass and a [prompt catalog](docs/descript-analysis/underlord/prompt-catalog.md)), the AI Tools panel ([ai-tools/](docs/descript-analysis/ai-tools/): Smooth jump cuts, Automatic multicam, Publish/Write prompt actions), and three editor settings: room tone, Smart transitions, wordless media ([editor-settings/](docs/descript-analysis/editor-settings/)). |
 
 ## Next steps
 
@@ -33,3 +34,5 @@ Operators continue this work from **Grok Bot** with **REA** (`rea-agents` 6.7.0)
 4. Eye Contact, the Look Good suite, Video Regenerate, and Publish AI are specified from the public bundle and are later than the polish pipeline. Video Regenerate is `lip_sync` variant `imputation`, not `generate-video`. A voice clone waits on [docs/pseudocode/voice-consent.md](docs/pseudocode/voice-consent.md); the picture step also waits on the visual confirmation in [docs/pseudocode/video-regenerate.md](docs/pseudocode/video-regenerate.md). Punch-in voiceover does not need the voice record.
 
 Working hypothesis, not a decision: a public-API job plus a rescript-like transcript editor is a better Polish Clips MVP than cloning the Descript web app. The current rescript `LICENSE` is PolyForm Noncommercial, so read [docs/reuse-rescript.md](docs/reuse-rescript.md) before copying any of that code.
+
+In-progress work and open signed-in gaps: [HANDOFF.md](HANDOFF.md).
